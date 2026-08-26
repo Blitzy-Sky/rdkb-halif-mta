@@ -121,9 +121,10 @@
 #endif
 
 #ifndef RETURN_ERR
-/** Failure. The operation did not complete and no out-parameter may be relied
- *  on. This interface defines no other failure code, so the return value alone
- *  never distinguishes one cause of failure from another. */
+/** Failure. The call did not succeed and no out-parameter may be relied on;
+ *  this interface does not state how far the operation progressed before
+ *  failing. It defines no other failure code and states no mapping from any
+ *  particular condition to this one, so the return value identifies no cause. */
 #define RETURN_ERR   -1
 #endif
 
@@ -135,8 +136,10 @@
 
 #ifndef MTA_HAL_SHORT_VALUE_LEN
 /** Byte size of each short fixed-width text field of `MTAMGMT_MTA_CALLS`, which
- *  is where this interface uses it. A value written into such a field must fit
- *  within this size, terminator included. */
+ *  is where this interface uses it. It is the whole of the bound on such a
+ *  field: this interface does not state whether a value occupying all 16 bytes
+ *  carries a terminator, so a caller reads the field against this declared width
+ *  rather than searching for one. */
 #define  MTA_HAL_SHORT_VALUE_LEN   16
 #endif
 
@@ -144,7 +147,8 @@
 /** Byte size of a long text field, 64. The structures in this header spell that
  *  width as a literal rather than through this macro, so no declaration here
  *  references it; it is published for callers that size their own buffers to the
- *  interface's long field width. */
+ *  interface's long field width. As with the short fields, this interface states
+ *  no termination convention for a value that fills such a field. */
 #define  MTA_HAL_LONG_VALUE_LEN   64
 #endif
 
@@ -181,18 +185,21 @@
  * hardware and software versions, RFPI (Radio Fixed Part Identity), and authentication PIN. It's used for managing and monitoring
  * the DECT module associated with an MTA.
  *
- * @note Every text member is a fixed 64-byte field. `PIN` is the same field that
- *       `mta_hal_GetDectPIN()` reports and `mta_hal_SetDectPIN()` accepts, so 64
- *       bytes including the terminator is the largest PIN this interface can
- *       represent.
+ * @note Every text member is a fixed 64-byte field. `PIN` holds an authentication PIN,
+ *       and `mta_hal_GetDectPIN()` and `mta_hal_SetDectPIN()` carry a PIN through a
+ *       `char *` parameter the prior revision of this interface documented as 128
+ *       bytes. This interface does not state that the field and that parameter are the
+ *       same storage, and does not state what happens to this 64-byte field when a
+ *       longer value is set, so the field's width must not be read as a bound on those
+ *       calls.
  */
 typedef struct _MTAMGMT_MTA_DECT
 {
     ULONG RegisterDectHandset;    /**< Registration status of the DECT handset. Currently, these values are set to 0 in the CCSP code. */
     ULONG DeregisterDectHandset;  /**< Deregistration status of the DECT handset. Currently, these values are set to 0 in the CCSP code. */
-    char HardwareVersion[64];     /**< DECT module hardware version. Provides the version information of the hardware. */
+    char HardwareVersion[64];     /**< Hardware version of the DECT module, as text in a 64-byte field. This interface states no format for it and publishes no value meaning "unknown", so a caller compares it for equality or displays it rather than parsing or ordering it. */
     char RFPI[64];                /**< RFPI (Radio Fixed Part Identity) value of the DECT module from the EEPROM. Unique identifier for the DECT base station. */
-    char SoftwareVersion[64];     /**< DECT module software version. Provides the version information of the software. */
+    char SoftwareVersion[64];     /**< Software version of the DECT module, as text in a 64-byte field, on the same terms as `HardwareVersion`: no format is stated and no value marks it unknown. */
     char PIN[64];                 /**< Authentication PIN for base module (CMBS) <-> handset communication. Used for securing communications between devices. */
 } MTAMGMT_MTA_DECT, *PMTAMGMT_MTA_DECT;
 
@@ -211,8 +218,8 @@ typedef struct _MTAMGMT_MTA_HANDSETS_INFO
     ULONG InstanceNumber;                        /**< Instance number of the MTA Handset. Unique identifier for each handset. */
     BOOLEAN Status;                              /**< Status of the MTA Handset. Indicates if the handset is active or inactive. */
     char LastActiveTime[64];                     /**< Last Active Time of the MTA Handset. Records the last time the handset was active. */
-    char HandsetName[64];                        /**< Handset Name. The name assigned to the handset. */
-    char HandsetFirmware[64];                    /**< Handset Firmware. The firmware version is installed on the handset. */
+    char HandsetName[64];                        /**< Name the handset is configured with, as text in a 64-byte field. This interface does not say who assigns it, does not require it to be unique across handsets, and publishes no value meaning "unnamed", so a caller identifies a handset by `InstanceNumber` rather than by this member. */
+    char HandsetFirmware[64];                    /**< Firmware version running on the handset, as text in a 64-byte field. This interface states no format for it, so a caller compares it for equality or displays it rather than ordering it. */
     char OperatingTN[64];                        /**< Operating TN. Indicates the Telephone Number (TN) the handset is operating on. Currently, only TN1 is assigned to DECT phones. */
     char SupportedTN[64];                        /**< Supported TN. Indicates the Telephone Number (TN) supported by the handset. Currently, only TN1 is assigned to DECT phones. */
 } MTAMGMT_MTA_HANDSETS_INFO, *PMTAMGMT_MTA_HANDSETS_INFO;
@@ -230,7 +237,7 @@ typedef struct _MTAMGMT_MTA_DHCP_INFO
 {
     ANSC_IPV4_ADDRESS IPAddress;               /**< IP Address assigned to the MTA. */
     CHAR BootFileName[256];                     /**< Boot file name received from the DHCP server. */
-    CHAR FQDN[64];                             /**< Fully Qualified Domain Name. */
+    CHAR FQDN[64];                             /**< Fully qualified domain name obtained with the IPv4 lease, as text in a 64-byte field. This interface does not state whether it names the MTA itself or the server that supplied the lease, states no format beyond it being a domain name, and publishes no value meaning "none supplied" - so a caller must not read an empty field as a distinct outcome. */
     ANSC_IPV4_ADDRESS SubnetMask;              /**< Subnet mask for the IP address. */
     ANSC_IPV4_ADDRESS Gateway;                 /**< Default gateway IP address. */
     ULONG LeaseTimeRemaining;                  /**< Remaining lease time in seconds. */
@@ -238,11 +245,11 @@ typedef struct _MTAMGMT_MTA_DHCP_INFO
     CHAR RenewTimeRemaining[64];               /**< Remaining time to renew in seconds. */
     ANSC_IPV4_ADDRESS PrimaryDNS;              /**< Primary DNS server IP address. */
     ANSC_IPV4_ADDRESS SecondaryDNS;            /**< Secondary DNS server IP address. */
-    CHAR DHCPOption3[64];                      /**< Custom DHCP Option 3. */
-    CHAR DHCPOption6[64];                      /**< Custom DHCP Option 6. */
-    CHAR DHCPOption7[64];                      /**< Custom DHCP Option 7. */
-    CHAR DHCPOption8[64];                      /**< Custom DHCP Option 8. */
-    CHAR PCVersion[64];                        /**< Version of the PC. */
+    CHAR DHCPOption3[64];                      /**< Value of the custom DHCP option 3 carried with the MTA's IPv4 lease, as text in a 64-byte field. This interface does not say whether the value originates with the DHCP server or with local configuration, and states no encoding for it - whether the bytes are rendered as text, as hex or as an address - and publishes no value meaning "the option was absent", so a caller establishes the encoding with its implementation and must not read an empty field as a distinct outcome. The three option members below carry the same caveats. */
+    CHAR DHCPOption6[64];                      /**< Value of the custom DHCP option 6, on the same terms as `DHCPOption3`. */
+    CHAR DHCPOption7[64];                      /**< Value of the custom DHCP option 7, on the same terms as `DHCPOption3`. */
+    CHAR DHCPOption8[64];                      /**< Value of the custom DHCP option 8, on the same terms as `DHCPOption3`. Note that the same four member names appear in `MTAMGMT_MTA_DHCPv6_INFO`, where DHCPv6 numbers these options differently, so the values are not interchangeable between the two structures. */
+    CHAR PCVersion[64];                        /**< Version string obtained with the lease, as text in a 64-byte field. This interface does not expand the abbreviation "PC", does not say which component the version describes, and states no format for it, so a caller treats the contents as an opaque vendor string. */
     CHAR MACAddress[64];                       /**< MAC address of the MTA. */
     ANSC_IPV4_ADDRESS PrimaryDHCPServer;       /**< Primary DHCP server IP address. */
     ANSC_IPV4_ADDRESS SecondaryDHCPServer;     /**< Secondary DHCP server IP address. */
@@ -263,7 +270,7 @@ typedef struct _MTAMGMT_MTA_DHCPv6_INFO
 {
     CHAR IPV6Address[INET6_ADDRSTRLEN];                 /**< IPv6 Address assigned to the MTA. */
     CHAR BootFileName[256];                             /**< Boot file name received from the DHCPv6 server. */
-    CHAR FQDN[64];                                     /**< Fully Qualified Domain Name. */
+    CHAR FQDN[64];                                     /**< Fully qualified domain name obtained with the IPv6 lease, as text in a 64-byte field, with the same caveats as the IPv4 structure's member of the same name: this interface does not say which entity it names and publishes no value meaning "none supplied". */
     CHAR Prefix[INET6_ADDRSTRLEN];                     /**< Network prefix associated with the IPv6 address. */
     CHAR Gateway[INET6_ADDRSTRLEN];                    /**< Default gateway IPv6 address. */
     ULONG LeaseTimeRemaining;                          /**< Remaining lease time in seconds. */
@@ -271,11 +278,11 @@ typedef struct _MTAMGMT_MTA_DHCPv6_INFO
     CHAR RenewTimeRemaining[64];                       /**< Remaining time to renew in seconds */
     CHAR PrimaryDNS[INET6_ADDRSTRLEN];                 /**< Primary DNS server IPv6 address. */
     CHAR SecondaryDNS[INET6_ADDRSTRLEN];               /**< Secondary DNS server IPv6 address. */
-    CHAR DHCPOption3[64];                              /**< Custom DHCP Option 3. */
-    CHAR DHCPOption6[64];                              /**< Custom DHCP Option 6. */
-    CHAR DHCPOption7[64];                              /**< Custom DHCP Option 7. */
-    CHAR DHCPOption8[64];                              /**< Custom DHCP Option 8. */
-    CHAR PCVersion[64];                                /**< Version of the PC. */
+    CHAR DHCPOption3[64];                              /**< Value of the custom DHCP option 3 carried with the MTA's IPv6 lease, as text in a 64-byte field. As in the IPv4 structure, this interface does not say where the value originates and states no encoding and publishes no value meaning "the option was absent"; and because DHCPv6 numbers its options independently of DHCPv4, this member is not the IPv6 counterpart of `MTAMGMT_MTA_DHCP_INFO::DHCPOption3`. The three option members below carry the same caveats. */
+    CHAR DHCPOption6[64];                              /**< Value of the custom DHCP option 6, on the same terms as the member above. */
+    CHAR DHCPOption7[64];                              /**< Value of the custom DHCP option 7, on the same terms as the member above. */
+    CHAR DHCPOption8[64];                              /**< Value of the custom DHCP option 8, on the same terms as the member above. */
+    CHAR PCVersion[64];                                /**< Version string obtained with the lease, as text in a 64-byte field. This interface does not expand the abbreviation "PC", does not say which component the version describes, and states no format for it, so a caller treats the contents as an opaque vendor string. */
     CHAR MACAddress[64];                               /**< The telephony IPv6 MAC address for this device. */
     CHAR PrimaryDHCPv6Server[INET6_ADDRSTRLEN];        /**< Primary DHCPv6 server IPv6 address. */
     CHAR SecondaryDHCPv6Server[INET6_ADDRSTRLEN];      /**< Secondary DHCPv6 server IPv6 address. */
@@ -297,16 +304,16 @@ typedef struct _MTAMGMT_MTA_SERVICE_FLOW
     ULONG SFID;                              /**< Service Flow ID. Unique identifier for the service flow. */
     CHAR ServiceClassName[256];              /**< Name of the service class. Used to identify the type of service the flow is associated with. */
     CHAR Direction[16];                      /**< Direction of the service flow. Can be 'Upstream' or 'Downstream'. */
-    ULONG ScheduleType;                      /**< Schedule Type. Defines the scheduling mechanism used for the service flow. */
-    BOOLEAN DefaultFlow;                     /**< Indicates if this is the default service flow. */
-    ULONG NomGrantInterval;                  /**< Nominal Grant Interval. Specifies the nominal interval between grants. */
-    ULONG UnsolicitGrantSize;                /**< Unsolicited Grant Size. The size of grants issued without a request. */
-    ULONG TolGrantJitter;                    /**< Tolerated Grant Jitter. The maximum acceptable jitter in grant timing. */
-    ULONG NomPollInterval;                   /**< Nominal Polling Interval. Specifies the nominal interval between polls. */
-    ULONG MinReservedPkt;                    /**< Minimum Reserved Packets. The minimum packet size is reserved for the flow. */
-    ULONG MaxTrafficRate;                    /**< Maximum Traffic Rate. The peak traffic rate allowed for the flow. */
-    ULONG MinReservedRate;                   /**< Minimum Reserved Rate. The minimum data rate is reserved for the flow. */
-    ULONG MaxTrafficBurst;                   /**< Maximum Traffic Burst. The maximum size of a burst of traffic allowed for the flow. */
+    ULONG ScheduleType;                      /**< Scheduling mechanism the flow is served with. This interface publishes no set of values for it and names no external enumeration, so a caller cannot map a value to a scheduling type from this header alone and must establish the encoding with its implementation. */
+    BOOLEAN DefaultFlow;                     /**< TRUE when this element is the default service flow, FALSE otherwise. This interface does not state whether exactly one element of the array `mta_hal_GetServiceFlow()` returns carries TRUE, so a caller must not rely on finding precisely one. */
+    ULONG NomGrantInterval;                  /**< Nominal interval between grants for this flow. This interface states no unit for the value and no valid range beyond that of `ULONG`, and publishes no value meaning "not applicable to this scheduling type" - so a caller establishes the unit with its implementation before comparing or converting it. The eight numeric members below are stated on the same terms. */
+    ULONG UnsolicitGrantSize;                /**< Size of a grant issued without a request. No unit is stated. */
+    ULONG TolGrantJitter;                    /**< Largest deviation from the nominal grant interval the flow tolerates. No unit is stated. */
+    ULONG NomPollInterval;                   /**< Nominal interval between polls for this flow. No unit is stated. */
+    ULONG MinReservedPkt;                    /**< Minimum reserved packet size for the flow. No unit is stated. */
+    ULONG MaxTrafficRate;                    /**< Peak traffic rate the flow is allowed. No unit is stated. */
+    ULONG MinReservedRate;                   /**< Minimum data rate reserved for the flow. No unit is stated. */
+    ULONG MaxTrafficBurst;                   /**< Largest burst of traffic the flow is allowed. No unit is stated. */
     CHAR TrafficType[64];                    /**< Type of traffic. Can be 'SIP', 'RTP', or other types depending on the application. */
     ULONG NumberOfPackets;                   /**< Packet count. Number of packets that have been processed by this service flow. */
 } MTAMGMT_MTA_SERVICE_FLOW, *PMTAMGMT_MTA_SERVICE_FLOW;
@@ -320,25 +327,25 @@ typedef struct _MTAMGMT_MTA_SERVICE_FLOW
  */
 typedef struct _MTAMGMT_MTA_CALLS
 {
-    CHAR Codec[64];                                    /**< Local codec used for the call. */
-    CHAR RemoteCodec[64];                              /**< Remote codec used for the call. */
-    CHAR CallStartTime[64];                            /**< Start time of the call. */
-    CHAR CallEndTime[64];                              /**< End time of the call. */
-    CHAR CWErrorRate[MTA_HAL_SHORT_VALUE_LEN];         /**< Code Word Error Rate. The ratio of useful signal to background noise. */
-    CHAR PktLossConcealment[MTA_HAL_SHORT_VALUE_LEN];  /**< Packet Loss Concealment. The ratio of lost packets to total expected packets. */
-    BOOLEAN JitterBufferAdaptive;                      /**< Indicates if Jitter Buffer Adaptive (JBA) is used. */
+    CHAR Codec[64];                                    /**< Name of the codec the local end used for this call, as text in a 64-byte field. This interface publishes no set of permitted names and no value meaning "unknown", so a caller compares the string against names it has established with its implementation rather than against a vocabulary defined here. */
+    CHAR RemoteCodec[64];                              /**< Name of the codec the far end used for this call, with the same representation and the same absence of a defined vocabulary as `Codec`. It need not equal `Codec`: this interface does not state that the two ends negotiated the same codec. */
+    CHAR CallStartTime[64];                            /**< Time at which the call started, as text in a 64-byte field. This interface states no format, no time zone and no epoch for it, and publishes no value meaning "unknown", so a caller must not parse it or order calls by it until it has established the format with its implementation. */
+    CHAR CallEndTime[64];                              /**< Time at which the call ended, in the same unspecified text format as `CallStartTime`. This interface does not state what the member holds while a call is still in progress, so its content is not a reliable test of whether the call has ended. */
+    CHAR CWErrorRate[MTA_HAL_SHORT_VALUE_LEN];         /**< Rate of code word errors reported for this call, as text in a 16-byte field. The neighbouring `CWErrors` reports a count of code word errors; this interface does not state what this member expresses that count as - it gives no denominator, no interval over which the rate is computed, no unit and no scale - and it publishes no value meaning "not measured". It is not a ratio of signal to noise: that quantity is the separate `SNR` member below. A caller therefore renders or forwards the text and establishes the representation with its implementation before comparing, averaging or thresholding it. */
+    CHAR PktLossConcealment[MTA_HAL_SHORT_VALUE_LEN];  /**< Packet loss concealment for the local end of this call, as text in a 16-byte field. Concealment is the treatment applied to compensate for packets that did not arrive, not a measure of how many were lost, and this interface does not state what the member reports about it: it names no quantity, no unit, no scale and no interval, publishes no set of permitted values, and defines no value meaning "not measured" or "none applied". Loss itself is reported elsewhere in this structure - `LossRate` as a fraction scaled by 256 and `PacketLoss` as a count - so a caller must not read this member as either of those, and establishes what it holds with its implementation before interpreting it. */
+    BOOLEAN JitterBufferAdaptive;                      /**< TRUE when the local end used an adaptive jitter buffer for this call, FALSE when it used a fixed one - the interface names no third possibility and no value for "not known". `JitterBufRate` reports the buffer's adjustment rate; this interface does not state what that member holds when this one is FALSE, so a caller does not read the two as a pair without establishing that with its implementation. */
     BOOLEAN Originator;                                /**< Indicates if the local side is the originating side of the call. */
-    ANSC_IPV4_ADDRESS RemoteIPAddress;                 /**< Remote IP address. */
+    ANSC_IPV4_ADDRESS RemoteIPAddress;                 /**< IPv4 address of the far end of the call, in the two-view `ANSC_IPV4_ADDRESS` union: read it as the four octets of `Dot` in network byte order, or as `Value`, which is the same storage seen as a `uint32_t` and therefore not in host byte order. This interface publishes no value meaning "unknown" or "not applicable", so a caller cannot distinguish an unset member from the address 0.0.0.0 and must decide what an all-zero value means for its own purposes. */
     ULONG CallDuration;                                /**< Duration of the call in minutes. */
     CHAR CWErrors[MTA_HAL_SHORT_VALUE_LEN];            /**< Code Word Errors on this channel. */
-    CHAR SNR[MTA_HAL_SHORT_VALUE_LEN];                 /**< Signal to Noise Ratio. */
+    CHAR SNR[MTA_HAL_SHORT_VALUE_LEN];                 /**< Signal-to-noise ratio reported for this call, as text in a 16-byte field. This interface does not say what the ratio is measured between, and - unlike the neighbouring `DownstreamPower` and `UpstreamPower`, which it states in dBmV - gives no unit and no valid range for it, so a caller establishes both with its implementation before comparing values. */
     CHAR MicroReflections[MTA_HAL_SHORT_VALUE_LEN];    /**< Micro Reflections. Return loss measurement. */
     CHAR DownstreamPower[MTA_HAL_SHORT_VALUE_LEN];     /**< Downstream power in dBmV. */
     CHAR UpstreamPower[MTA_HAL_SHORT_VALUE_LEN];       /**< Upstream power in dBmV. */
-    CHAR EQIAverage[MTA_HAL_SHORT_VALUE_LEN];          /**< EQI Average. */
-    CHAR EQIMinimum[MTA_HAL_SHORT_VALUE_LEN];          /**< EQI Minimum. */
-    CHAR EQIMaximum[MTA_HAL_SHORT_VALUE_LEN];          /**< EQI Maximum. */
-    CHAR EQIInstantaneous[MTA_HAL_SHORT_VALUE_LEN];    /**< EQI Instantaneous. */
+    CHAR EQIAverage[MTA_HAL_SHORT_VALUE_LEN];          /**< The average of the call's EQI readings, as text in a 16-byte field. This interface does not expand the abbreviation EQI, name the quantity it measures, or state its unit, scale, direction of goodness or valid range, and publishes no value meaning "not measured" - so a caller renders or forwards the text and does not compare, average or threshold it until it has established those with its implementation. The three EQI members below are stated on the same terms and share the same representation. */
+    CHAR EQIMinimum[MTA_HAL_SHORT_VALUE_LEN];          /**< The smallest of the call's EQI readings. Which end of the undefined scale is the better one is not stated, so a caller must not read this as the worst reading of the call. */
+    CHAR EQIMaximum[MTA_HAL_SHORT_VALUE_LEN];          /**< The largest of the call's EQI readings, with the same caveat as `EQIMinimum` about which end of the scale is better. */
+    CHAR EQIInstantaneous[MTA_HAL_SHORT_VALUE_LEN];    /**< A single EQI reading rather than an aggregate. This interface does not state when it was taken, over what interval any of the four are computed, or how often readings occur, so a caller must not treat it as current at the moment of the call and must not assume it falls between `EQIMinimum` and `EQIMaximum`. */
     CHAR MOS_LQ[MTA_HAL_SHORT_VALUE_LEN];              /**< Mean Opinion Score of Listening Quality. Scale: 10-50. */
     CHAR MOS_CQ[MTA_HAL_SHORT_VALUE_LEN];              /**< Mean Opinion Score of Conversational Quality. Scale: 10-50. */
     CHAR EchoReturnLoss[MTA_HAL_SHORT_VALUE_LEN];      /**< Residual Echo Return Loss, in dB. */
@@ -351,7 +358,7 @@ typedef struct _MTAMGMT_MTA_CALLS
     CHAR BurstDuration[MTA_HAL_SHORT_VALUE_LEN];       /**< Mean duration of bursts, in milliseconds. */
     CHAR GapDuration[MTA_HAL_SHORT_VALUE_LEN];         /**< Mean duration of gaps, in milliseconds. */
     CHAR RoundTripDelay[MTA_HAL_SHORT_VALUE_LEN];      /**< Most recent measured RTD, in milliseconds. */
-    CHAR Gmin[MTA_HAL_SHORT_VALUE_LEN];                /**< Local gap threshold. */
+    CHAR Gmin[MTA_HAL_SHORT_VALUE_LEN];                /**< Local gap threshold, which this interface describes through its remote counterpart `RemoteGmin` as the threshold used in burst calculations, as text in a 16-byte field. It states neither the unit nor the range of the value, and does not say which of the burst and gap members above it parameterises or how, so a caller reports it alongside those members rather than recomputing any of them from it. */
     CHAR RFactor[MTA_HAL_SHORT_VALUE_LEN];             /**< Voice quality evaluation for this RTP session. */
     CHAR ExternalRFactor[MTA_HAL_SHORT_VALUE_LEN];     /**< Voice quality evaluation for a segment on the network external to this RTP session. */
     CHAR JitterBufRate[MTA_HAL_SHORT_VALUE_LEN];       /**< Adjustment rate of the jitter buffer, in milliseconds. */
@@ -371,7 +378,7 @@ typedef struct _MTAMGMT_MTA_CALLS
     CHAR RemoteSignalLevel[MTA_HAL_SHORT_VALUE_LEN];           /**< Signal Level at the remote side. Measures the strength of the signal. */
     CHAR RemoteNoiseLevel[MTA_HAL_SHORT_VALUE_LEN];            /**< Noise Level at the remote side. Measures the level of background noise. */
     CHAR RemoteLossRate[MTA_HAL_SHORT_VALUE_LEN];              /**< Loss Rate at the remote side. Fraction of RTP data packet loss. */
-    CHAR RemotePktLossConcealment[MTA_HAL_SHORT_VALUE_LEN];    /**< Packet Loss Concealment at the remote side. The ratio of lost packets to total expected packets. */
+    CHAR RemotePktLossConcealment[MTA_HAL_SHORT_VALUE_LEN];    /**< Packet loss concealment at the far end, on the same terms as `PktLossConcealment`: the member names the concealment applied rather than a measure of loss, and this interface states no quantity, unit, scale, interval or permitted value set for it, and no value meaning "not measured". Remote loss itself is reported by `RemoteLossRate`. This interface also does not state how the local end obtains the far end's value or over what interval it was produced, so a caller does not compare it with the local member without establishing that with its implementation. */
     CHAR RemoteDiscardRate[MTA_HAL_SHORT_VALUE_LEN];           /**< Discard Rate at the remote side. Fraction of RTP data packets discarded during transmission. */
     CHAR RemoteBurstDensity[MTA_HAL_SHORT_VALUE_LEN];          /**< Burst Density at the remote side. Fraction of packets in a burst compared to total packets. */
     CHAR RemoteGapDensity[MTA_HAL_SHORT_VALUE_LEN];            /**< Gap Density at the remote side. Fraction of packets within inter-burst gaps. */
@@ -381,7 +388,7 @@ typedef struct _MTAMGMT_MTA_CALLS
     CHAR RemoteGmin[MTA_HAL_SHORT_VALUE_LEN];                 /**< Gmin at the remote side. Specifies the gap threshold used in burst calculations. */
     CHAR RemoteRFactor[MTA_HAL_SHORT_VALUE_LEN];              /**< R-Factor at the remote side. Voice quality evaluation metric for the remote RTP session. */
     CHAR RemoteExternalRFactor[MTA_HAL_SHORT_VALUE_LEN];      /**< External R-Factor at the remote side. Voice quality evaluation for segments on the network external to the remote RTP session. */
-    BOOLEAN RemoteJitterBufferAdaptive;                       /**< Indicates if the remote side is using an adaptive jitter buffer. */
+    BOOLEAN RemoteJitterBufferAdaptive;                       /**< TRUE when the far end used an adaptive jitter buffer, FALSE when it used a fixed one, on the same terms as `JitterBufferAdaptive`. This interface does not state how the local end learns it, so a caller must not assume the value was reported by the far end rather than inferred. */
     CHAR RemoteJitterBufRate[MTA_HAL_SHORT_VALUE_LEN];        /**< Adjustment rate of the remote jitter buffer in milliseconds. */
     CHAR RemoteJBNominalDelay[MTA_HAL_SHORT_VALUE_LEN];       /**< Nominal jitter buffer length at the remote side in milliseconds. */
     CHAR RemoteJBMaxDelay[MTA_HAL_SHORT_VALUE_LEN];           /**< Maximum jitter buffer length at the remote side in milliseconds. */
@@ -402,8 +409,8 @@ typedef struct _MTAMGMT_MTA_CALLS
  */
 typedef struct _MTAMGMT_MTA_LINETABLE_INFO
 {
-    ULONG InstanceNumber;                         /**< Instance number of the line. */
-    ULONG LineNumber;                             /**< Line number. */
+    ULONG InstanceNumber;                         /**< Identifier of this line within the MTA line table, and the value a caller passes as `InstanceNumber` to mta_hal_GetCalls() and mta_hal_ClearCalls(). Range is that of `ULONG`; this interface states neither the numbering base nor whether the values are contiguous, so a caller obtains one by reading the table with mta_hal_LineTableGetEntry() rather than by computing it. Note that it is not the zero-based `Index` argument of that call. */
+    ULONG LineNumber;                             /**< Number of the physical voice line this entry describes. `MTA_LINENUMBER` (8) is the line count this interface accounts for, but nothing here binds this member to that macro: the interface states neither its numbering base nor whether it equals `InstanceNumber` or the table index, and publishes no value meaning "unassigned". A caller therefore uses it for display and for correlation with vendor records, and uses `InstanceNumber` for the calls into this interface. */
     ULONG Status;                                 /**< Line status. 1 = OnHook; 2 = OffHook. */
     CHAR HazardousPotential[128];                 /**< Result of the HEMF (High Electric and Magnetic Fields) test. E.g., 'Passed', 'Not Started'. */
     CHAR ForeignEMF[128];                         /**< Result of the FEMF (Foreign Electromagnetic Fields) test. E.g., 'Passed', 'Not Started'. */
@@ -413,9 +420,9 @@ typedef struct _MTAMGMT_MTA_LINETABLE_INFO
     CHAR CAName[64];                              /**< Circuit Assurance (CA) name associated with this line. */
     ULONG CAPort;                                 /**< Circuit Assurance (CA) port number. */
     ULONG MWD;                                    /**< Message Waiting Indicator. Indicates the presence of a voicemail or similar message. */
-    ULONG CallsNumber;                            /**< Number of calls associated with this line. */
-    PMTAMGMT_MTA_CALLS pCalls;                    /**< Pointer to calls data. */
-    ULONG CallsUpdateTime;                        /**< Timestamp of the last update to calls information. */
+    ULONG CallsNumber;                            /**< Number of `MTAMGMT_MTA_CALLS` elements the array at `pCalls` holds. Zero means the line has no call records, and `pCalls` must not be dereferenced in that case. This interface does not state whether the records are ordered, nor over what period they accumulate. */
+    PMTAMGMT_MTA_CALLS pCalls;                    /**< Address of an array of `CallsNumber` `MTAMGMT_MTA_CALLS` elements holding this line's call records, supplied by the implementation. It must not be dereferenced when `CallsNumber` is zero. This interface does not state which side allocates or releases it, nor how long it stays valid, so a caller neither frees it nor assumes it survives the next MTA HAL call, and copies any record it needs to keep. */
+    ULONG CallsUpdateTime;                        /**< Time at which the implementation last refreshed the records `pCalls` addresses. This interface states no epoch, unit or resolution for the value, so a caller may compare two readings of this member to detect a refresh but must not convert it to a wall-clock time, and no value here means "never updated". */
     ULONG OverCurrentFault;                       /**< Over-current fault status. 1 = Normal, 2 = Fault. */
 } MTAMGMT_MTA_LINETABLE_INFO, *PMTAMGMT_MTA_LINETABLE_INFO;
 
@@ -442,14 +449,16 @@ typedef struct _MTAMGMT_MTA_CALLP
  * This structure stores log entries related to DSX operations, including time of the log, description of the event,
  * and other vendor-specific identifiers and levels. It's used for monitoring and debugging DSX operations.
  *
- * @note `Time` is a 64-byte field and `Description` a 128-byte field, so a log
- *       line longer than that is truncated by the implementation before a caller
- *       ever sees it. `ID` and `Level` are vendor-defined and this interface
+ * @note `Time` is a 64-byte field and `Description` a 128-byte field, and those
+ *       widths are the whole of what this interface bounds: it does not state
+ *       what an implementation does with a longer value, so a caller must not
+ *       assume a log line is preserved in full, nor that it is truncated in any
+ *       particular way. `ID` and `Level` are vendor-defined and this interface
  *       assigns them no fixed meaning.
  */
 typedef struct _MTAMGMT_MTA_DSXLOG
 {
-    CHAR Time[64];              /**< Time of the log entry. */
+    CHAR Time[64];              /**< Time at which the DSX event was recorded, as text in a 64-byte field. This interface states no format for it - unlike `MTAMGMT_MTA_MTALOG_FULL::Time`, which gives "1998-05-14" as an example - so a caller displays it rather than parsing it, and does not assume the two log types agree on a format. */
     CHAR Description[128];      /**< Description of the log entry. Provides details about the DSX operation or event. */
     ULONG ID;                   /**< Identifier for the log entry. A unique value is provided by the vendor to identify the log entry. */
     ULONG Level;                /**< Log level of the entry. Specifies the severity or importance of the log.  */
@@ -524,11 +533,11 @@ typedef struct _MTAMGMT_MTA_BATTERY_INFO
  *       not a state machine a caller may drive or predict.
  */
 typedef  enum {
-	MTA_INIT=0,         /**< MTA provisioning init */
-	MTA_START=1,        /**< MTA provisioning is in progress */
-	MTA_COMPLETE=2,     /**< MTA is operational */
-	MTA_ERROR=3,        /**< MTA provisioning failed */
-	MTA_REJECTED=4      /**< Rejected */
+	MTA_INIT=0,         /**< The subject of the question has not started. Read against mta_hal_getMtaOperationalStatus() it means the MTA is not yet operational; this interface does not state what it means for the config-file, DHCP or line-register questions, so a caller treats it as "not started" for whichever of the four it asked. */
+	MTA_START=1,        /**< The subject of the question is under way and has neither completed nor failed. A caller polls the same call again rather than treating this as an outcome; this interface states no interval at which to poll and no bound on how long the value may persist. */
+	MTA_COMPLETE=2,     /**< The subject of the question completed successfully, and it is the only one of the five values that denotes success. Read against mta_hal_getMtaOperationalStatus() this interface glosses it as the MTA being operational; for the config-file, DHCP and line-register questions it offers no per-question gloss, so a caller reads it as success for whichever of the four it asked and no further. */
+	MTA_ERROR=3,        /**< The subject of the question failed. It is a successful answer, not a call failure: a caller distinguishes the two by the RETURN_OK or RETURN_ERR the call returned. This interface does not state why the failure occurred or whether it is retryable. */
+	MTA_REJECTED=4      /**< The subject of the question was refused rather than merely failing - a configuration file the MTA declined to accept is the case mta_hal_getConfigFileStatus() documents. Like MTA_ERROR it is a successful answer, and this interface does not state what a rejection means for the other three questions the enumeration serves. */
 } MTAMGMT_MTA_STATUS;
 
 /**
@@ -564,21 +573,23 @@ typedef enum{
  *
  * @par Status codes
  * Every entry point but two returns `INT`, carrying `RETURN_OK` or `RETURN_ERR`
- * and nothing else. Those two codes are the only ones this interface defines, so
- * a caller cannot tell one cause of failure from another - a rejected argument, an
- * absent capability and a vendor or hardware fault are indistinguishable at the
- * return value. Where a caller must respond differently to different causes, it
- * has to establish the cause by other means, such as re-reading a count or a
- * status enumeration before retrying. The two exceptions are
+ * and nothing else. Those two codes are the only ones this interface defines, and
+ * it states no mapping from any particular condition to `RETURN_ERR`, so that code
+ * identifies no cause: a caller must not read it as a rejected argument, as an
+ * absent capability, or as a vendor or hardware fault. Where a caller must respond
+ * differently to different causes, it has to establish the cause by other means,
+ * such as re-reading a count or a status enumeration before retrying. The two exceptions are
  * `mta_hal_LineTableGetNumberOfEntries()`, which returns a `ULONG` count, and
  * `mta_hal_LineRegisterStatus_callback_register()`, which returns nothing.
  *
  * @par Battery calls in particular
- * The battery entry points do not distinguish an absent battery from any other
- * failure: with only `RETURN_ERR` available, "no battery is fitted" and "the
- * battery could not be read" arrive identically. A caller that must know whether
+ * A failed battery read tells a caller nothing about why it failed, so it cannot be
+ * read as "no battery is fitted": with only `RETURN_ERR` available, this interface
+ * states no mapping from any condition to the code. A caller that must know whether
  * a battery is present calls `mta_hal_BatteryGetInstalled()` and treats that
  * answer, not a failed capacity or status read, as the presence test.
+ * `mta_hal_BatteryGetStatus()` is the one battery call whose published value domain
+ * includes an absence marker, "Missing", which it reports on a successful call.
  *
  * @par Blocking and threading
  * The calls are synchronous: each returns only once the operation has completed
@@ -615,12 +626,13 @@ typedef enum{
 * @returns The status of the operation.
 * @retval RETURN_OK  - The shared databases are available locally and the rest of
 *                      this interface may be used.
-* @retval RETURN_ERR - The databases could not be made available. No other entry
-*                      point should be relied on. Because this is the interface's
-*                      only failure code, the caller cannot learn why from the
-*                      return value; it should retry after allowing the MTA to
-*                      finish coming up, and treat repeated failure as the MTA
-*                      subsystem being unavailable rather than as a transient error.
+* @retval RETURN_ERR - The call failed. This interface does not state whether any part
+*                      of the initialisation took effect, so no other entry point
+*                      should be relied on. The return value identifies no cause, so
+*                      it cannot distinguish an MTA that has not finished coming up
+*                      from one that will not come up at all: a caller that retries
+*                      decides how long to go on retrying on that basis rather than on
+*                      a cause read out of this code.
 *
 * @pre None. This call is the precondition of the others, not the other way round.
 * @post On success the shared databases are reachable locally for the lifetime of
@@ -646,19 +658,24 @@ INT   mta_hal_InitDB(void);
 *
 * @param[out] pInfo pointer to PMTAMGMT_MTA_DHCP_INFO structure that will hold all DHCP info for MTA, to be returned.
 *                   \n The caller allocates the structure and retains ownership of
-*                   it; the implementation only writes through the pointer and does
-*                   not keep it after the call returns. Must not be NULL. Its
+*                   it; the implementation writes through the pointer. This interface
+*                   does not state whether the implementation retains the pointer
+*                   after the call returns, so a caller keeps the structure valid
+*                   rather than reading the return as permission to release it. Must
+*                   not be NULL. Its
 *                   address members are `ANSC_IPV4_ADDRESS` unions, not text.
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `*pInfo` has been populated and may be read.
 * @retval RETURN_ERR - Nothing may be read from `*pInfo`; it may have been partly
-*                      written. The single failure code covers a NULL pointer, an
-*                      MTA that has not obtained a lease and a vendor read failure
-*                      alike, so a caller that needs to tell them apart checks
-*                      provisioning state with mta_hal_getMtaProvisioningStatus()
-*                      or the DHCP state with mta_hal_getDhcpStatus() rather than
-*                      inferring a cause here.
+*                      written. This interface defines one failure code and does not
+*                      state what it reports, so the return value identifies no
+*                      cause: a caller must not read it as "no lease has been
+*                      obtained", as "the argument was rejected", or as any other
+*                      particular condition. Where the distinction matters it
+*                      establishes provisioning state with
+*                      mta_hal_getMtaProvisioningStatus() or DHCP state with
+*                      mta_hal_getDhcpStatus() instead of inferring a cause here.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK. Values are only meaningful once the
 *      MTA has been provisioned; before that a caller should expect failure or an
@@ -684,16 +701,19 @@ INT mta_hal_GetDHCPInfo(PMTAMGMT_MTA_DHCP_INFO pInfo);
 *
 * @param[out] pInfo pointer to PMTAMGMT_MTA_DHCPv6_INFO that will hold all DHCP info for MTA, to be returned.
 *                   \n The caller allocates the structure and retains ownership of
-*                   it; the implementation only writes through the pointer and does
-*                   not keep it after the call returns. Must not be NULL.
+*                   it; the implementation writes through the pointer. This interface
+*                   does not state whether the implementation retains the pointer
+*                   after the call returns, so a caller keeps the structure valid
+*                   rather than reading the return as permission to release it. Must
+*                   not be NULL.
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `*pInfo` has been populated and may be read.
-* @retval RETURN_ERR - Nothing may be read from `*pInfo`. As with the IPv4 call,
-*                      the single failure code does not distinguish a bad argument
-*                      from an MTA that holds no IPv6 lease, so a caller that needs
-*                      to know consults mta_hal_getDhcpStatus(), whose second
-*                      output reports IPv6 state specifically.
+* @retval RETURN_ERR - Nothing may be read from `*pInfo`. As with the IPv4 call, the
+*                      single failure code identifies no cause, so failure must not be
+*                      read as the MTA holding no IPv6 lease. A caller that needs to
+*                      know consults mta_hal_getDhcpStatus(), whose second output
+*                      reports IPv6 state specifically.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK. Meaningful only where the MTA is
 *      provisioned in `MTA_IPV6` or `MTA_DUAL_STACK` mode; in `MTA_IPV4` mode a
@@ -755,7 +775,10 @@ ULONG mta_hal_LineTableGetNumberOfEntries(void);
 * @param[out] pEntry - Structure variable containing MTA Line table entry info, to be returned.
 *                     \n The caller allocates the `MTAMGMT_MTA_LINETABLE_INFO` and
 *                     retains ownership of it; the implementation writes through the
-*                     pointer and does not keep it. Must not be NULL. Its `pCalls`
+*                     pointer. This interface does not state whether the
+*                     implementation retains that pointer after the call returns, so
+*                     a caller keeps the structure valid rather than reading the
+*                     return as permission to release it. Must not be NULL. Its `pCalls`
 *                     member is a pointer the implementation supplies, valid for
 *                     `CallsNumber` elements; this interface does not state which
 *                     side releases it, so a caller must not free it and must not
@@ -763,10 +786,13 @@ ULONG mta_hal_LineTableGetNumberOfEntries(void);
 *
 * @returns The status of the operation
 * @retval RETURN_OK  - `*pEntry` has been populated and may be read.
-* @retval RETURN_ERR - Nothing may be read from `*pEntry`. An out-of-range `Index`,
-*                      a NULL `pEntry` and a vendor read failure are reported
-*                      identically, so on failure a caller should re-read the entry
-*                      count before retrying rather than retrying the same index.
+* @retval RETURN_ERR - Nothing may be read from `*pEntry`. The return value
+*                      identifies no cause, so failure must not be read as the index
+*                      being out of range or as the argument having been rejected. A
+*                      caller re-reads the entry count with
+*                      mta_hal_LineTableGetNumberOfEntries() before retrying, rather
+*                      than retrying the same index on an assumption about why the
+*                      call failed.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK and `Index` is below the count
 *      reported by mta_hal_LineTableGetNumberOfEntries().
@@ -797,10 +823,14 @@ INT   mta_hal_LineTableGetEntry(ULONG Index, PMTAMGMT_MTA_LINETABLE_INFO pEntry)
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - The diagnostics were accepted for the identified line.
-* @retval RETURN_ERR - The diagnostics were not started. A caller should not read the
-*                      GR909 members afterwards expecting fresh results; they retain
-*                      whatever they held before, which is why "Not Started" is one
-*                      of the values those members carry.
+* @retval RETURN_ERR - The call failed. This interface does not state whether any part
+*                      of the test sequence was started before it failed, so the state
+*                      of the line and of the four GR909 members is unspecified: a
+*                      caller must not read failure as the tests having been left
+*                      alone, nor as the members still holding what they held before.
+*                      It re-reads the entry with mta_hal_LineTableGetEntry() and
+*                      treats the GR909 members as being of unknown freshness until a
+*                      call has returned RETURN_OK.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK and `Index` identifies an existing
 *      line-table entry.
@@ -842,10 +872,10 @@ INT   mta_hal_TriggerDiagnostics(ULONG Index);
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `*Count` and `*ppCfg` have been written and may be read.
-* @retval RETURN_ERR - Neither output may be read. The single failure code does not
-*                      distinguish a bad argument from an allocation failure or a
-*                      vendor read failure, so a caller should treat the whole result
-*                      as absent rather than probing for a partial one.
+* @retval RETURN_ERR - Neither output may be read. The single failure code identifies
+*                      no cause, so a caller should treat the whole result as absent
+*                      rather than probing for a partial one or inferring why the call
+*                      failed.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK.
 * @post On success `*Count` holds the element count and `*ppCfg` addresses that many
@@ -876,10 +906,11 @@ INT   mta_hal_GetServiceFlow(ULONG* Count, PMTAMGMT_MTA_SERVICE_FLOW *ppCfg);
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `*pBool` holds the current DECT enabled state.
-* @retval RETURN_ERR - `*pBool` must not be read. On a product with no DECT
-*                      subsystem this is the only answer available, since the
-*                      interface offers no separate "not supported" code, so a caller
-*                      should not read failure here as a fault.
+* @retval RETURN_ERR - `*pBool` must not be read, and the DECT enabled state is
+*                      unknown to the caller. This interface defines no "not
+*                      supported" code and its single failure code identifies no
+*                      cause, so failure must not be read either as a fault or as the
+*                      absence of a DECT subsystem.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK.
 * @post On success `*pBool` has been written; on failure its value is undefined.
@@ -905,9 +936,12 @@ INT   mta_hal_DectGetEnable(BOOLEAN *pBool);
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - The requested state has been applied.
-* @retval RETURN_ERR - The state was not applied and the previous state stands. A
-*                      caller that must confirm the outcome reads it back with
-*                      mta_hal_DectGetEnable() rather than assuming either state.
+* @retval RETURN_ERR - The call failed. This interface does not state whether the
+*                      requested state was applied before it failed, so the DECT
+*                      subsystem's state afterwards is unspecified: a caller must not
+*                      read failure as the previous state still standing. It reads the
+*                      state back with mta_hal_DectGetEnable() before relying on it
+*                      either way.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK.
 * @post On success the DECT subsystem is in the requested state. This interface does
@@ -934,9 +968,9 @@ INT mta_hal_DectSetEnable(BOOLEAN bBool);
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `*pBool` holds the current registration-mode state.
-* @retval RETURN_ERR - `*pBool` must not be read. As with the other DECT getters,
-*                      absence of a DECT subsystem is reported the same way as a
-*                      read failure.
+* @retval RETURN_ERR - `*pBool` must not be read. As with the other DECT getters, the
+*                      return value identifies no cause, so failure says nothing about
+*                      whether a DECT subsystem is present.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK.
 * @post On success `*pBool` has been written; on failure its value is undefined.
@@ -966,10 +1000,13 @@ INT mta_hal_DectGetRegistrationMode(BOOLEAN* pBool);
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - The requested registration mode has been applied.
-* @retval RETURN_ERR - The mode was not applied and the previous state stands. A
-*                      caller must not assume registration mode was closed on a
-*                      failed disable; it reads the state back with
-*                      mta_hal_DectGetRegistrationMode().
+* @retval RETURN_ERR - The call failed. This interface does not state whether the
+*                      requested mode was applied, so the state of registration mode
+*                      afterwards is unspecified. A failed disable in particular must
+*                      not be read as registration mode having been left open or
+*                      having been closed: a caller reads the state back with
+*                      mta_hal_DectGetRegistrationMode() before treating the
+*                      registration window as either.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK.
 * @post On success registration mode is in the requested state. This interface does
@@ -1000,10 +1037,14 @@ INT mta_hal_DectSetRegistrationMode(BOOLEAN bBool);
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - The identified handset has been deregistered.
-* @retval RETURN_ERR - No handset was deregistered. An unrecognised identifier and a
-*                      vendor failure are reported identically, so a caller should
-*                      re-read the handset list with mta_hal_GetHandsets() to
-*                      establish which handsets remain rather than retrying blindly.
+* @retval RETURN_ERR - The call failed, and the return value does not identify a
+*                      cause. This interface does not state whether the identified
+*                      handset was deregistered, so a caller must not read failure as
+*                      the handset still being registered, nor as no handset having
+*                      been removed. It re-reads the handset list with
+*                      mta_hal_GetHandsets() to establish which handsets remain,
+*                      rather than retrying blindly on the assumption that nothing
+*                      happened.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK and the DECT subsystem is enabled.
 * @post On success the handset is no longer registered and is absent from the list
@@ -1025,14 +1066,18 @@ INT mta_hal_DectDeregisterDectHandset(ULONG uValue);
 *
 * @param[out] pDect - Info of DECT. pDect is a pointer to structure PMTAMGMT_MTA_DECT.
 *                     \n The caller allocates the structure and retains ownership of
-*                     it; the implementation writes through the pointer and does not
-*                     keep it. Must not be NULL. Every text member is a 64-byte
+*                     it; the implementation writes through the pointer. This
+*                     interface does not state whether the implementation retains the
+*                     pointer after the call returns, so a caller keeps the structure
+*                     valid rather than reading the return as permission to release
+*                     it. Must not be NULL. Every text member is a 64-byte
 *                     field, `PIN` included.
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `*pDect` has been populated and may be read.
-* @retval RETURN_ERR - Nothing may be read from `*pDect`. A product without a DECT
-*                      subsystem is reported the same way as a read failure.
+* @retval RETURN_ERR - Nothing may be read from `*pDect`. The return value identifies
+*                      no cause, so failure must not be read as the product having no
+*                      DECT subsystem.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK.
 * @post On success every member of `*pDect` has been written; on failure the contents
@@ -1059,22 +1104,32 @@ INT mta_hal_GetDect(PMTAMGMT_MTA_DECT pDect);
 *
 * @param[out] pPINString - A caller-allocated character buffer that receives the PIN as a zero-terminated string.
 *                          \n The caller allocates it and retains ownership; the
-*                          implementation writes into it and does not keep the
-*                          pointer. Must not be NULL. The PIN is held by this
-*                          interface in `MTAMGMT_MTA_DECT::PIN`, a 64-byte field, so
-*                          64 bytes including the terminator is the largest value it
-*                          can represent and a buffer of that size is sufficient.
-*                          There is no argument through which a caller can declare a
-*                          smaller capacity, and this interface names no constant for
-*                          this buffer, so a caller must not supply less.
+*                          implementation writes into it. This interface does not
+*                          state whether the implementation retains the pointer after
+*                          the call returns, so a caller keeps the buffer valid rather
+*                          than reading the return as permission to release or reuse
+*                          it. Must not be NULL. The prior revision of this
+*                          interface documented this parameter as "128 bytes of
+*                          character pointer", so 128 writable bytes is the capacity
+*                          this interface asks a caller to provide. The related
+*                          field `MTAMGMT_MTA_DECT::PIN` is declared 64 bytes, which
+*                          is a narrower store for the same value; this interface does
+*                          not state how the two relate, and in particular does not
+*                          state what happens to that field when a longer value is
+*                          set. A caller sizes this buffer by the documented 128 bytes
+*                          rather than by the field, because that is the larger of the
+*                          two and the only figure stated for this parameter. There is
+*                          no argument through which a caller can declare a smaller
+*                          capacity, and this interface names no constant for this
+*                          buffer, so a caller must not supply less.
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `pPINString` holds a zero-terminated PIN.
 * @retval RETURN_ERR - The buffer content is undefined and must not be read as a PIN.
-*                      A product without a DECT subsystem is reported the same way as
-*                      a read failure.
+*                      The return value identifies no cause, so failure must not be
+*                      read as the product having no DECT subsystem.
 *
-* @pre mta_hal_InitDB() has returned RETURN_OK and `pPINString` addresses at least 64
+* @pre mta_hal_InitDB() has returned RETURN_OK and `pPINString` addresses at least 128
 *      writable bytes.
 * @post On success the buffer holds a zero-terminated string; on failure its contents
 *       are undefined.
@@ -1095,24 +1150,40 @@ INT mta_hal_GetDectPIN(char* pPINString);
 * handsets that are already registered; it governs subsequent registrations.
 *
 * @param[in] pPINString - A caller-supplied zero-terminated string carrying the new DECT PIN.
-*                         \n The caller owns the buffer and may reuse or release it
-*                         once the call returns, because this interface does not state
-*                         that the implementation retains the pointer. Must not be
-*                         NULL. The value has to fit the interface's own storage for
-*                         it, `MTAMGMT_MTA_DECT::PIN`, which is a 64-byte field, so
-*                         the string including its terminator must not exceed 64
-*                         bytes. This interface names no constant for that bound and
-*                         does not state whether the implementation validates the
-*                         length or the character set, so a caller should check both
-*                         itself rather than rely on a rejection.
+*                         \n The caller owns the buffer. This interface does not state
+*                         whether the implementation retains the pointer beyond the
+*                         call, so a caller must not read the return as permission to
+*                         release, reuse or overwrite the buffer: it either keeps the
+*                         buffer valid and unchanged for as long as it goes on using
+*                         this interface, or establishes the retention behaviour with
+*                         its vendor first. That is a real constraint here rather than a
+*                         formality, because the value is a credential a caller will
+*                         want to overwrite, and overwriting storage an implementation
+*                         may still be reading is unsafe. Retention is unspecified for
+*                         every caller-supplied pointer in this interface, not only
+*                         this one; no declaration here and no statement in the
+*                         repository specification settles it.
+*                         \n Must not be NULL. The prior revision of this interface
+*                         documented this parameter as "a 128 bytes character pointer",
+*                         while the related field `MTAMGMT_MTA_DECT::PIN` is declared 64
+*                         bytes. This interface does not state how the two relate, nor
+*                         what happens to that field when a longer value is set, so
+*                         neither figure can be presented as the bound. It names no
+*                         constant for a maximum length and does not state whether the
+*                         implementation validates the length or the character set, so a
+*                         caller should agree the acceptable length with the vendor
+*                         rather than infer it from either width, and should check the
+*                         value itself rather than rely on a rejection.
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - The new PIN has been applied.
-* @retval RETURN_ERR - The PIN was not changed and the previous one stands. An
-*                      over-long or malformed value, an absent DECT subsystem and a
-*                      vendor write failure are indistinguishable here, so a caller
-*                      should validate the value before the call and read it back with
-*                      mta_hal_GetDectPIN() to confirm the outcome.
+* @retval RETURN_ERR - The call failed, and the return value does not identify a
+*                      cause. This interface does not state whether the new PIN was
+*                      stored, so which PIN the base station will require afterwards
+*                      is unspecified: a caller must not read failure as the previous
+*                      PIN still standing. It validates the value before the call and
+*                      reads the PIN back with mta_hal_GetDectPIN() to establish which
+*                      one is in force.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK.
 * @post On success the base station requires the new PIN for subsequent registrations.
@@ -1134,20 +1205,30 @@ INT mta_hal_SetDectPIN(char* pPINString);
 * telephone numbers it operates on and supports. `DECT_MAX_HANDSETS` (5) bounds how
 * many can exist.
 *
-* @param pulCount  - Pointer to an unsigned long carrying the handset count.
-*                    \n This interface does not establish the direction of this
-*                    argument. Its definition describes the pointer as providing the
-*                    handset number without stating whether the implementation writes
-*                    the number of handsets it returned into it, or reads from it a
-*                    capacity the caller is declaring. The analogous count arguments
-*                    of the other array-returning entry points here -
-*                    mta_hal_GetServiceFlow(), mta_hal_GetCalls(),
-*                    mta_hal_GetDSXLogs() and mta_hal_GetMtaLog() - are defined as
-*                    outputs carrying the number of entries returned, but this
-*                    definition does not say the same, so a caller must not assume it
-*                    behaves that way. Establish the direction with the implementation
-*                    before relying on it; supply a valid, initialised `ULONG` either
-*                    way, and it must not be NULL.
+* @param[in] pulCount  - Unsigned long integer pointer that provides handset number. The value ranges from 0 to (2^32)-1.
+*                    \n It is an input: the caller writes the value into its own
+*                    `ULONG` before the call and the implementation reads it. Must
+*                    not be NULL, and the value it addresses must be initialised for
+*                    the same reason. This interface constrains that value no further
+*                    than the range given above; `DECT_MAX_HANDSETS` (5) is the
+*                    largest number of handsets it admits, so a value above five
+*                    corresponds to no handset population this interface can report.
+*                    \n What the direction rules out matters as much as what it
+*                    establishes. Because the argument is an input, the number of
+*                    records the implementation wrote is not reported back through it,
+*                    and a caller must not read a count out of it after the call.
+*                    That is where this entry point differs from the other
+*                    array-returning ones - mta_hal_GetServiceFlow(),
+*                    mta_hal_GetCalls(), mta_hal_GetDSXLogs() and
+*                    mta_hal_GetMtaLog() - whose count arguments are defined as
+*                    outputs carrying the number of entries returned. This interface
+*                    states no relation between the value passed here and the extent
+*                    of the array reached through `ppHandsets`, and declares no other
+*                    output reporting that extent, so how many records a caller may
+*                    read is not established by this interface: `DECT_MAX_HANDSETS`
+*                    (5) is the only bound it publishes, and a caller establishes the
+*                    exact convention with the implementation before indexing beyond
+*                    the first record.
 * @param[out] ppHandsets - Pointer to ppHandsets structure that contains Info of MTA handset.
 *                          \n The caller supplies the address of a
 *                          `PMTAMGMT_MTA_HANDSETS_INFO` and the implementation writes
@@ -1156,14 +1237,15 @@ INT mta_hal_SetDectPIN(char* pPINString);
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - The outputs have been written and may be read.
-* @retval RETURN_ERR - Neither output may be read. A caller cannot tell from the
-*                      return value whether the failure was a bad argument, an absent
-*                      DECT subsystem or a vendor failure.
+* @retval RETURN_ERR - Neither output may be read. The return value identifies no
+*                      cause, so a caller learns nothing from it about the argument it
+*                      passed or about the presence of a DECT subsystem.
 *
-* @pre mta_hal_InitDB() has returned RETURN_OK.
-* @post On success `*ppHandsets` addresses the returned records and `*pulCount` has
-*       been left in whichever state the implementation's reading of that argument
-*       implies.
+* @pre mta_hal_InitDB() has returned RETURN_OK and `*pulCount` has been initialised,
+*      since the implementation reads it.
+* @post On success `*ppHandsets` addresses the returned records. `pulCount` is an
+*       input, so this interface establishes nothing about its value after the call
+*       and a caller must not read one back from it.
 *
 * @note Blocking: synchronous. It may block while the MTA hardware is not ready.
 * @warning This interface does not specify whether the caller or the implementation
@@ -1203,9 +1285,10 @@ INT mta_hal_GetHandsets(ULONG* pulCount, PMTAMGMT_MTA_HANDSETS_INFO* ppHandsets)
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `*Count` and `*ppCfg` have been written and may be read.
-* @retval RETURN_ERR - Neither output may be read. An unknown `InstanceNumber` is
-*                      reported the same way as a vendor failure, so a caller should
-*                      re-read the line table before retrying.
+* @retval RETURN_ERR - Neither output may be read. The return value identifies no
+*                      cause, so failure must not be read as the `InstanceNumber`
+*                      being unknown; a caller re-reads the line table before retrying
+*                      rather than acting on that assumption.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK and `InstanceNumber` identifies an
 *      existing line-table entry.
@@ -1245,8 +1328,11 @@ INT   mta_hal_GetCalls(ULONG InstanceNumber, ULONG *Count, PMTAMGMT_MTA_CALLS *p
 *                          range of `ULONG` is stated.
 * @param[out]  pCallp - Call processing information, to be returned.
 *                       \n The caller allocates the `MTAMGMT_MTA_CALLP` and retains
-*                       ownership of it; the implementation writes through the pointer
-*                       and does not keep it. Must not be NULL.
+*                       ownership of it; the implementation writes through the pointer.
+*                       This interface does not state whether the implementation
+*                       retains that pointer after the call returns, so a caller keeps
+*                       the structure valid rather than reading the return as
+*                       permission to release it. Must not be NULL.
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `*pCallp` has been populated and may be read.
@@ -1288,9 +1374,11 @@ INT   mta_hal_GetCALLP(ULONG LineNumber, PMTAMGMT_MTA_CALLP pCallp);
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `*Count` and `*ppDSXLog` have been written and may be read.
-* @retval RETURN_ERR - Neither output may be read. An empty log is not an error and is
-*                      reported as success with a count of 0, so failure here points at
-*                      a bad argument or a vendor failure rather than at absent entries.
+* @retval RETURN_ERR - Neither output may be read. A count of 0 lies within the range
+*                      this interface documents for `Count`, so an empty log is
+*                      reported through a successful call rather than through this
+*                      code; failure therefore does not mean the log is empty, and it
+*                      identifies no other cause either.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK.
 * @post On success `*Count` holds the entry count and `*ppDSXLog` addresses that many
@@ -1347,9 +1435,12 @@ INT   mta_hal_GetDSXLogEnable(BOOLEAN *pBool);
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - The requested logging state has been applied.
-* @retval RETURN_ERR - The state was not applied and the previous one stands. A caller
-*                      that depends on logging being on reads it back with
-*                      mta_hal_GetDSXLogEnable() rather than assuming success.
+* @retval RETURN_ERR - The call failed. This interface does not state whether the
+*                      requested state was applied, so whether DSX logging is on
+*                      afterwards is unspecified: a caller must not read failure as
+*                      the previous state still standing. A caller that depends on
+*                      logging being on reads the state back with
+*                      mta_hal_GetDSXLogEnable() rather than assuming either outcome.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK.
 * @post On success DSX logging is in the requested state. This interface does not
@@ -1379,8 +1470,12 @@ INT   mta_hal_SetDSXLogEnable(BOOLEAN Bool);
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - The request was accepted.
-* @retval RETURN_ERR - The log was not cleared, and a caller must assume the previous
-*                      entries are still present.
+* @retval RETURN_ERR - The call failed. This interface does not state whether any
+*                      entry was discarded before it failed, so the contents of the
+*                      log afterwards are unspecified: a caller must not read failure
+*                      as the previous entries all still being present, and must not
+*                      read it as the log having been left untouched. It re-reads the
+*                      log with mta_hal_GetDSXLogs() to establish what remains.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK.
 * @post On success the DSX log holds no entries a subsequent mta_hal_GetDSXLogs() will
@@ -1436,10 +1531,13 @@ INT mta_hal_GetCallSignallingLogEnable(BOOLEAN *pBool) ;
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - The requested logging state has been applied.
-* @retval RETURN_ERR - The state was not applied and the previous one stands. A caller
-*                      that has just tried to DISABLE logging should treat failure as
-*                      logging possibly still being on, and confirm with
-*                      mta_hal_GetCallSignallingLogEnable().
+* @retval RETURN_ERR - The call failed. This interface does not state whether the
+*                      requested state was applied, so whether call-signalling
+*                      logging is on afterwards is unspecified. That matters most on a
+*                      failed DISABLE: a caller must not read failure as the previous
+*                      state standing in either direction, and must treat logging as
+*                      possibly still recording until
+*                      mta_hal_GetCallSignallingLogEnable() has reported otherwise.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK.
 * @post On success call-signalling logging is in the requested state. This interface
@@ -1468,9 +1566,15 @@ INT mta_hal_SetCallSignallingLogEnable(BOOLEAN Bool) ;
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - The request was accepted.
-* @retval RETURN_ERR - The log was not cleared, and a caller must assume the previous
-*                      records are still present. Where the clear was made to discard
-*                      call data, failure means that data is still held.
+* @retval RETURN_ERR - The call failed. This interface does not state whether any
+*                      record was discarded before it failed, so the contents of the
+*                      log afterwards are unspecified, and a caller must not read
+*                      failure either as the records all still being present or as the
+*                      log having been left untouched. Where the clear was made to
+*                      discard call data, that data must be treated as possibly still
+*                      held: this interface declares no read entry point for this log,
+*                      so it offers a caller no way to establish what remains, and the
+*                      outcome has to be established outside this interface.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK.
 * @post On success the call-signalling log holds no records.
@@ -1505,9 +1609,10 @@ INT mta_hal_ClearCallSignallingLog(BOOLEAN Bool) ;
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `*Count` and `*ppCfg` have been written and may be read.
-* @retval RETURN_ERR - Neither output may be read. An empty log is reported as success
-*                      with a count of 0, so failure points at a bad argument or a
-*                      vendor failure rather than at an absence of entries.
+* @retval RETURN_ERR - Neither output may be read. An empty log is reported through a
+*                      successful call with a count of 0, so failure does not mean the
+*                      log is empty; beyond that the return value identifies no
+*                      cause.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK.
 * @post On success `*Count` holds the record count and `*ppCfg` addresses that many
@@ -1530,10 +1635,12 @@ INT mta_hal_GetMtaLog(ULONG *Count, PMTAMGMT_MTA_MTALOG_FULL *ppCfg);
 /**
 * @brief Reports whether a backup battery is fitted.
 *
-* This is the presence test for the battery, and the one call in the battery group whose
-* answer distinguishes "no battery" from "could not read". The other battery entry points
-* report an absent battery as `RETURN_ERR`, identically to a read failure, so a caller
-* establishes presence here first and interprets the rest in that light.
+* This is the presence test for the battery: it is the one call whose success reports
+* absence as a value, `FALSE`, rather than leaving a caller to infer it. No other battery
+* entry point publishes a value meaning "no battery" except
+* mta_hal_BatteryGetStatus(), whose "Missing" serves the same purpose, and a failed call
+* elsewhere in the group identifies no cause - so a caller establishes presence here
+* first and interprets the rest of the group in that light.
 *
 * @param[out] Val - It is a boolean pointer with 1 byte size, which receives whether a battery is installed.
 *                   \n The caller supplies the `BOOLEAN` and the implementation writes
@@ -1573,9 +1680,11 @@ INT mta_hal_BatteryGetInstalled(BOOLEAN* Val);
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `*Val` holds the design capacity.
-* @retval RETURN_ERR - `*Val` must not be read. An absent battery is reported this way
-*                      too, so a caller establishes presence with
-*                      mta_hal_BatteryGetInstalled() rather than inferring it here.
+* @retval RETURN_ERR - `*Val` must not be read, and the design capacity is unknown to
+*                      the caller. The return value identifies no cause, so failure
+*                      must not be read as an absent battery; a caller establishes
+*                      presence with mta_hal_BatteryGetInstalled() instead of inferring
+*                      it here.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK and, for a meaningful answer, a battery
 *      is fitted.
@@ -1603,8 +1712,8 @@ INT mta_hal_BatteryGetTotalCapacity(ULONG* Val);
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `*Val` holds the present full-charge capacity.
-* @retval RETURN_ERR - `*Val` must not be read. An absent battery is reported this way
-*                      too.
+* @retval RETURN_ERR - `*Val` must not be read. The return value identifies no cause,
+*                      so failure must not be read as an absent battery.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK and, for a meaningful answer, a battery
 *      is fitted.
@@ -1630,9 +1739,9 @@ INT mta_hal_BatteryGetActualCapacity(ULONG* Val);
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `*Val` holds the remaining charge.
-* @retval RETURN_ERR - `*Val` must not be read. An absent battery is reported this way
-*                      too, and a caller must not substitute 0, which would read as a
-*                      flat battery.
+* @retval RETURN_ERR - `*Val` must not be read. The return value identifies no cause,
+*                      so failure must not be read as an absent battery, and a caller
+*                      must not substitute 0, which would read as a flat battery.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK and, for a meaningful answer, a battery
 *      is fitted.
@@ -1662,8 +1771,8 @@ INT mta_hal_BatteryGetRemainingCharge(ULONG* Val);
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `*Val` holds the estimate in minutes.
-* @retval RETURN_ERR - `*Val` must not be read. An absent battery is reported this way
-*                      too.
+* @retval RETURN_ERR - `*Val` must not be read. The return value identifies no cause,
+*                      so failure must not be read as an absent battery.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK and, for a meaningful answer, a battery
 *      is fitted.
@@ -1693,9 +1802,10 @@ INT mta_hal_BatteryGetRemainingTime(ULONG* Val);
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `*Val` holds the rated cycle count.
-* @retval RETURN_ERR - `*Val` must not be read. An absent battery, and a battery whose
-*                      rating the implementation does not know, are both reported this
-*                      way.
+* @retval RETURN_ERR - `*Val` must not be read, and the rated cycle count is unknown to
+*                      the caller. The return value identifies no cause, so failure must
+*                      not be read as an absent battery or as a rating the
+*                      implementation does not hold.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK and, for a meaningful answer, a battery
 *      is fitted.
@@ -1717,8 +1827,11 @@ INT mta_hal_BatteryGetNumberofCycles(ULONG* Val);
 *
 * @param[out] Val - It is a character pointer which stores the battery power status, to be returned. Possible values are of "AC", "Battery", or "Unknown"
 *                   \n It is a zero-terminated string. The caller allocates the buffer
-*                   and retains ownership; the implementation writes into it and does not
-*                   keep the pointer. Must not be NULL. This interface does not state the
+*                   and retains ownership; the implementation writes into it. This
+*                   interface does not state whether the implementation retains the
+*                   pointer after the call returns, so a caller keeps the buffer valid
+*                   rather than reading the return as permission to release or reuse it.
+*                   Must not be NULL. This interface does not state the
 *                   minimum size the caller must provide, and provides no argument through
 *                   which the caller can declare its capacity, so a caller must size the
 *                   buffer to hold the longest value listed above with its terminator and
@@ -1763,8 +1876,11 @@ INT mta_hal_BatteryGetPowerStatus(CHAR *Val, ULONG *len);
 *
 * @param[out] Val - It is a character pointer which stores the battery condition, to be returned. Possible values are "Good" or "Bad".
 *                   \n It is a zero-terminated string. The caller allocates the buffer
-*                   and retains ownership; the implementation writes into it and does not
-*                   keep the pointer. Must not be NULL. This interface does not state the
+*                   and retains ownership; the implementation writes into it. This
+*                   interface does not state whether the implementation retains the
+*                   pointer after the call returns, so a caller keeps the buffer valid
+*                   rather than reading the return as permission to release or reuse it.
+*                   Must not be NULL. This interface does not state the
 *                   minimum size the caller must provide, so a caller sizes the buffer for
 *                   the longest value listed above with its terminator and must not assume
 *                   the implementation checks the capacity.
@@ -1782,8 +1898,10 @@ INT mta_hal_BatteryGetPowerStatus(CHAR *Val, ULONG *len);
 * @returns The status of the operation.
 * @retval RETURN_OK  - `Val` holds a zero-terminated condition string and `*len` its
 *                      length.
-* @retval RETURN_ERR - Neither output may be read. An absent battery is reported this way
-*                      rather than as a distinct condition value.
+* @retval RETURN_ERR - Neither output may be read. The two condition values this
+*                      interface publishes are "Good" and "Bad", neither of which
+*                      denotes an absent battery, and the return value identifies no
+*                      cause - so failure must not be read as absence either.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK, `Val` addresses a writable buffer large
 *      enough for the longest value listed, and a battery is fitted.
@@ -1809,8 +1927,11 @@ INT mta_hal_BatteryGetCondition(CHAR *Val, ULONG *len);
 * @param[out] Val - It is a character pointer that stores the battery status, to be returned. The values are: "Missing", "Idle", "Charging",
 *                   \n "Discharging", or "Unknown".
 *                   \n It is a zero-terminated string. The caller allocates the buffer and
-*                   retains ownership; the implementation writes into it and does not keep
-*                   the pointer. Must not be NULL. This interface does not state the
+*                   retains ownership; the implementation writes into it. This interface
+*                   does not state whether the implementation retains the pointer after
+*                   the call returns, so a caller keeps the buffer valid rather than
+*                   reading the return as permission to release or reuse it.
+*                   Must not be NULL. This interface does not state the
 *                   minimum size the caller must provide, so a caller sizes the buffer for
 *                   the longest value listed above - "Discharging" - with its terminator,
 *                   and must not assume the implementation checks the capacity.
@@ -1820,10 +1941,11 @@ INT mta_hal_BatteryGetCondition(CHAR *Val, ULONG *len);
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `Val` holds a zero-terminated status string and `*len` its length.
-* @retval RETURN_ERR - Neither output may be read. Note that this call CAN report an
-*                      absent battery successfully, as the value "Missing", which the
-*                      other battery calls cannot; a caller should therefore not read
-*                      failure here as absence.
+* @retval RETURN_ERR - Neither output may be read. Note that this call reports an absent
+*                      battery successfully, as the value "Missing" - no other battery
+*                      call in this interface publishes a value domain containing an
+*                      equivalent marker - so a caller must not read failure here as
+*                      absence.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK and `Val` addresses a writable buffer large
 *      enough for the longest value listed.
@@ -1849,8 +1971,11 @@ INT mta_hal_BatteryGetStatus(CHAR* Val, ULONG *len);
 *
 * @param[out] Val - It is a character pointer which stores the battery life status, to be returned. The values are: "Need Replacement", or "Good".
 *                   \n It is a zero-terminated string. The caller allocates the buffer and
-*                   retains ownership; the implementation writes into it and does not keep
-*                   the pointer. Must not be NULL. This interface does not state the
+*                   retains ownership; the implementation writes into it. This interface
+*                   does not state whether the implementation retains the pointer after
+*                   the call returns, so a caller keeps the buffer valid rather than
+*                   reading the return as permission to release or reuse it.
+*                   Must not be NULL. This interface does not state the
 *                   minimum size the caller must provide, so a caller sizes the buffer for
 *                   the longest value listed above - "Need Replacement" - with its
 *                   terminator, and must not assume the implementation checks the capacity.
@@ -1891,14 +2016,18 @@ INT mta_hal_BatteryGetLife(CHAR* Val, ULONG *len);
 *
 * @param[out] pInfo - Structure variable of type PMTAMGMT_MTA_BATTERY_INFO containing the battery info, to be returned.
 *                     \n The caller allocates the structure and retains ownership of it;
-*                     the implementation writes through the pointer and does not keep it.
+*                     the implementation writes through the pointer. This interface does
+*                     not state whether the implementation retains that pointer after the
+*                     call returns, so a caller keeps the structure valid rather than
+*                     reading the return as permission to release it.
 *                     Must not be NULL. All four members are 32-byte text fields.
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `*pInfo` has been populated and may be read.
-* @retval RETURN_ERR - Nothing may be read from `*pInfo`. An absent battery is reported
-*                      this way, so a caller checks mta_hal_BatteryGetInstalled() before
-*                      treating failure as a fault.
+* @retval RETURN_ERR - Nothing may be read from `*pInfo`. The return value identifies no
+*                      cause, so a caller checks mta_hal_BatteryGetInstalled() before
+*                      treating failure as a fault, and must not read failure itself as
+*                      absence.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK and a battery is fitted.
 * @post On success all four members of `*pInfo` have been written; on failure the contents
@@ -1932,8 +2061,10 @@ INT mta_hal_BatteryGetInfo(PMTAMGMT_MTA_BATTERY_INFO pInfo);
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `*pValue` holds 1 (Enabled) or 2 (Disabled).
-* @retval RETURN_ERR - `*pValue` must not be read. An absent battery, and a product with
-*                      no power-saving support, are both reported this way.
+* @retval RETURN_ERR - `*pValue` must not be read, and the power-saving mode status is
+*                      unknown to the caller. The return value identifies no cause, so
+*                      failure must not be read as an absent battery or as a product
+*                      without power-saving support.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK.
 * @post On success `*pValue` has been written; on failure its value is undefined.
@@ -2024,9 +2155,12 @@ INT mta_hal_Get_LineResetCount(ULONG *resetcnt);
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - The call records for the identified line have been cleared.
-* @retval RETURN_ERR - Nothing was cleared, and a caller must assume the previous records
-*                      are still present. An unknown `InstanceNumber` is reported the same
-*                      way as a vendor failure.
+* @retval RETURN_ERR - The call failed, and the return value does not identify a cause.
+*                      This interface does not state whether any record was discarded
+*                      before it failed, so the records held for the line afterwards are
+*                      unspecified: a caller must not read failure as nothing having been
+*                      cleared. It re-reads the line with mta_hal_GetCalls() to establish
+*                      what remains before treating any figure as a baseline.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK and `InstanceNumber` identifies an existing
 *      line-table entry.
@@ -2118,8 +2252,12 @@ INT mta_hal_getConfigFileStatus(MTAMGMT_MTA_STATUS *poutput_status);
 * @param[out] output_status_array - return array buffer for all line register status from MTAMGMT_MTA_STATUS enumeration.
 *                                    \n The caller allocates an array of at least
 *                                    `array_size` `MTAMGMT_MTA_STATUS` elements and retains
-*                                    ownership of it; the implementation writes into it and
-*                                    does not keep the pointer. Must not be NULL. This
+*                                    ownership of it; the implementation writes into it.
+*                                    This interface does not state whether the
+*                                    implementation retains the pointer after the call
+*                                    returns, so a caller keeps the array valid rather than
+*                                    reading the return as permission to release it. Must
+*                                    not be NULL. This
 *                                    interface does not state how many elements the
 *                                    implementation writes, nor whether it writes fewer than
 *                                    `array_size` when there are fewer lines, so a caller
@@ -2137,8 +2275,12 @@ INT mta_hal_getConfigFileStatus(MTAMGMT_MTA_STATUS *poutput_status);
 * @retval RETURN_OK  - The array has been populated for the lines the implementation
 *                      reported.
 * @retval RETURN_ERR - The array contents must not be relied on; they may have been partly
-*                      written. An `array_size` too small for the line count and a vendor
-*                      failure are reported identically.
+*                      written. The return value identifies no cause, so failure must not
+*                      be read as `array_size` having been too small for the line count,
+*                      nor as the array having been left untouched. A caller that sized
+*                      the array itself re-checks that sizing against
+*                      mta_hal_LineTableGetNumberOfEntries() rather than inferring it
+*                      from this code.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK, and `output_status_array` addresses at least
 *      `array_size` writable elements.
@@ -2168,7 +2310,13 @@ INT mta_hal_getLineRegisterStatus(MTAMGMT_MTA_STATUS *output_status_array, int a
 * @returns The status of the operation.
 * @retval RETURN_OK  - The reset was accepted. Note that acceptance is all this reports: the
 *                      call returning does not establish that the MTA has come back.
-* @retval RETURN_ERR - The reset was not carried out and the MTA is still running as before.
+* @retval RETURN_ERR - The call failed. This interface does not state whether the reset was
+*                      initiated before it failed, so a caller must not read failure as the
+*                      MTA still running as before: the device may reset regardless. It
+*                      establishes what happened by polling mta_hal_getMtaOperationalStatus()
+*                      once the MTA answers again, and by comparing the count
+*                      mta_hal_Get_MTAResetCount() reports against the one it read before
+*                      the call.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK.
 * @post On success the MTA resets. This interface does not state whether it returns before or
@@ -2259,7 +2407,9 @@ INT mta_hal_getMtaProvisioningStatus(MTAMGMT_MTA_PROVISION_STATUS *provisionStat
 
 /** Length in bytes of the DHCP option 122 sub-option 1 value, 4. It bounds
  *  `MTAMGMT_PROVISIONING_PARAMS::DhcpOption122Suboption1`, which is declared one
- *  byte longer so a value of the full length can be terminated. */
+ *  byte longer, leaving room for a terminator after a value of the full bounded
+ *  length; this interface does not state whether the implementation requires
+ *  one. */
 #define MTA_DHCPOPTION122SUBOPTION1_MAX          4
 /** Length in bytes of the DHCP option 122 sub-option 2 value, 4. It bounds
  *  `MTAMGMT_PROVISIONING_PARAMS::DhcpOption122Suboption2` on the same terms. */
@@ -2296,8 +2446,9 @@ typedef  enum {
  * option 2171 sub-option values the implementation is to use.
  *
  * @note Each of the four text members is declared one byte longer than its
- *       `MTA_DHCPOPTION122*_MAX` bound so that a value of the full bounded
- *       length can be terminated. The two `*Len` members give the lengths of the
+ *       `MTA_DHCPOPTION122*_MAX` bound, which leaves room for a terminator after
+ *       a value of the full bounded length; this interface does not state whether
+ *       one is required. The two `*Len` members give the lengths of the
  *       corresponding `DhcpOption2171CccV6DssID*` values; the two option 122
  *       sub-option members have no length member and are bounded only by their
  *       declared size.
@@ -2307,12 +2458,12 @@ typedef struct _MTAMGMT_PROVISIONING_PARAMS
 {
 
 INT  MtaIPMode;                                                         /**<  Address family or families to provision the lines in. Takes one ordinal of MTAMGMT_MTA_PROV_IP_MODE: MTA_IPV4 (0), MTA_IPV6 (1) or MTA_DUAL_STACK (2). Declared INT rather than as the enumeration, so no value outside that set is rejected by the type and the caller is responsible for supplying one of the three. */
-INT  DhcpOption2171CccV6DssID1Len;                                      /**<  Length of DhcpOption2171CccV6DssID1 */
-INT  DhcpOption2171CccV6DssID2Len;                                      /**<  Length of DhcpOption2171CccV6DssID2 */
+INT  DhcpOption2171CccV6DssID1Len;                                      /**<  Number of bytes of DhcpOption2171CccV6DssID1 the caller has filled in, which the implementation reads instead of scanning the field. Declared INT, so the type rejects neither a negative value nor one above the MTA_DHCPOPTION122CCCV6DSSID1_MAX bound of 32; this interface states no default, does not say whether the count includes a terminating byte, and does not say what an out-of-range value does - so a caller sets it to the exact value length it wrote and establishes the terminator convention with its implementation. */
+INT  DhcpOption2171CccV6DssID2Len;                                      /**<  Number of bytes of DhcpOption2171CccV6DssID2 the caller has filled in, on the same terms as DhcpOption2171CccV6DssID1Len and against the MTA_DHCPOPTION122CCCV6DSSID2_MAX bound of 32. */
 CHAR DhcpOption122Suboption1[MTA_DHCPOPTION122SUBOPTION1_MAX+1];        /**<  4 byte hex value ie. FFFFFFFF = "255.255.255.255". IPv4 addresses MUST be encoded as 4 binary octets in network  byte-order (high order byte first). */
 CHAR DhcpOption122Suboption2[MTA_DHCPOPTION122SUBOPTION2_MAX+1];        /**<  4 byte hex value ie. FFFFFFFF = "255.255.255.255" */
-CHAR DhcpOption2171CccV6DssID1[MTA_DHCPOPTION122CCCV6DSSID1_MAX+1];     /**<  32 byte hex value */
-CHAR DhcpOption2171CccV6DssID2[MTA_DHCPOPTION122CCCV6DSSID2_MAX+1];     /**<  32 byte hex value */
+CHAR DhcpOption2171CccV6DssID1[MTA_DHCPOPTION122CCCV6DSSID1_MAX+1];     /**<  32 byte hex value. It is the first DHCPv6 option 2171 CCC DSS identifier the implementation is to provision with, written by the caller, whose length it declares in DhcpOption2171CccV6DssID1Len rather than by terminating the field. This interface states no default and does not say what the implementation does when the member is left empty. */
+CHAR DhcpOption2171CccV6DssID2[MTA_DHCPOPTION122CCCV6DSSID2_MAX+1];     /**<  32 byte hex value. It is the second such identifier, paired with DhcpOption2171CccV6DssID2Len on the same terms as the member above. */
 }
 MTAMGMT_PROVISIONING_PARAMS, *PMTAMGMT_MTA_PROVISIONING_PARAMS;
 
@@ -2352,9 +2503,14 @@ MTAMGMT_PROVISIONING_PARAMS, *PMTAMGMT_MTA_PROVISIONING_PARAMS;
 * @retval RETURN_OK  - Provisioning has been started. This does NOT mean the lines are
 *                      provisioned: it means the process is under way, and a caller polls
 *                      mta_hal_getMtaProvisioningStatus() for the outcome.
-* @retval RETURN_ERR - Provisioning was not started. An invalid `MtaIPMode`, an over-long
-*                      option value and a vendor failure are indistinguishable here, so a
-*                      caller should validate the structure it passed before retrying.
+* @retval RETURN_ERR - The call failed, and the return value identifies no cause: it must
+*                      not be read as the `MtaIPMode` having been rejected, as an
+*                      option value having been too long, or as any other particular
+*                      condition. This interface does not state whether provisioning was
+*                      started before the call failed, so a caller must not assume it was
+*                      not: it validates the structure it passed, then establishes what
+*                      actually happened with mta_hal_getMtaProvisioningStatus() and
+*                      mta_hal_getDhcpStatus() before issuing the call again.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK, and every member of `*pParameters` the
 *      caller intends to be used has been set - the structure is not partially optional in
@@ -2450,20 +2606,29 @@ typedef INT ( * mta_hal_getLineRegisterStatus_callback)(MTAMGMT_MTA_STATUS *outp
 * @execution callback
 *
 * @param[in] callback_proc - The function to install, of type mta_hal_getLineRegisterStatus_callback.
-*                            \n The caller owns the function and must keep it callable for as
-*                            long as the implementation may invoke it, which - since this
-*                            interface declares no way to remove a callback and no
-*                            deinitialisation call - means for the life of the process. This
-*                            interface does not state what passing NULL does, so a caller
-*                            should not pass NULL in an attempt to unregister. Nor does it
-*                            state whether a second call replaces the first callback or adds
-*                            to it, so a caller should register exactly once.
+*                            \n The caller owns the function. What is established about the
+*                            registration is only that this interface declares no way to
+*                            remove or replace one and no deinitialisation call, so a caller
+*                            has nothing with which to withdraw it; how long a registration
+*                            remains active, and for how long the implementation may go on
+*                            invoking the function, are not stated by this interface. A
+*                            caller therefore cannot rely on a registration lapsing, and
+*                            keeps the function - and every piece of state it touches -
+*                            callable for as long as it cannot rule out an invocation, which
+*                            this interface gives it no means of doing. This interface also
+*                            does not state what passing NULL does, so a caller should not
+*                            pass NULL in an attempt to unregister, and does not state
+*                            whether a second call replaces the first callback or adds to it,
+*                            so a caller should register exactly once.
 *
 * @pre mta_hal_InitDB() has returned RETURN_OK. Register before the events of interest can
 *      occur, since this interface does not deliver status changes that happened earlier.
-* @post The implementation may invoke `callback_proc` at any time thereafter, including before
-*       this function returns. A caller must therefore have everything the callback touches
-*       ready before it registers.
+* @post Nothing further is established by this call: it returns nothing, so it reports no
+*       outcome, and this interface does not state when the first invocation of
+*       `callback_proc` may occur - whether once this function has returned, or while it is
+*       still running. A caller must therefore treat an invocation as possible from the
+*       moment it registers, have everything the callback touches ready beforehand, and not
+*       use the return of this function as a barrier before which no invocation can happen.
 *
 * @note This function returns nothing, so a caller cannot tell from it whether registration
 *       succeeded; the first invocation of the callback is the only confirmation available.

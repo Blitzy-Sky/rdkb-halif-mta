@@ -186,20 +186,19 @@
  * the DECT module associated with an MTA.
  *
  * @note Every text member is a fixed 64-byte field. `PIN` holds an authentication PIN,
- *       and `mta_hal_GetDectPIN()` and `mta_hal_SetDectPIN()` carry a PIN through a
- *       `char *` parameter the prior revision of this interface documented as 128
- *       bytes. This interface does not state that the field and that parameter are the
- *       same storage, and does not state what happens to this 64-byte field when a
- *       longer value is set, so the field's width must not be read as a bound on those
- *       calls.
+ *       while `mta_hal_GetDectPIN()` and `mta_hal_SetDectPIN()` carry a PIN through a
+ *       `char *` parameter for which this interface states a capacity of 128 bytes. It
+ *       does not state that the field and that parameter are the same storage, and does
+ *       not state what happens to this 64-byte field when a longer value is set, so the
+ *       field's width must not be read as a bound on those calls.
  */
 typedef struct _MTAMGMT_MTA_DECT
 {
     ULONG RegisterDectHandset;    /**< Registration status of the DECT handset. Currently, these values are set to 0 in the CCSP code. */
     ULONG DeregisterDectHandset;  /**< Deregistration status of the DECT handset. Currently, these values are set to 0 in the CCSP code. */
-    char HardwareVersion[64];     /**< Hardware version of the DECT module, as text in a 64-byte field. This interface states no format for it and publishes no value meaning "unknown", so a caller compares it for equality or displays it rather than parsing or ordering it. */
+    char HardwareVersion[64];     /*!< Hardware version of the DECT module, as text in a 64-byte field. This interface states no format for it and publishes no value meaning "unknown", so a caller compares it for equality or displays it rather than parsing or ordering it. */
     char RFPI[64];                /**< RFPI (Radio Fixed Part Identity) value of the DECT module from the EEPROM. Unique identifier for the DECT base station. */
-    char SoftwareVersion[64];     /**< Software version of the DECT module, as text in a 64-byte field, on the same terms as `HardwareVersion`: no format is stated and no value marks it unknown. */
+    char SoftwareVersion[64];     /*!< Software version of the DECT module, as text in a 64-byte field, on the same terms as `HardwareVersion`: no format is stated and no value marks it unknown. */
     char PIN[64];                 /**< Authentication PIN for base module (CMBS) <-> handset communication. Used for securing communications between devices. */
 } MTAMGMT_MTA_DECT, *PMTAMGMT_MTA_DECT;
 
@@ -218,8 +217,8 @@ typedef struct _MTAMGMT_MTA_HANDSETS_INFO
     ULONG InstanceNumber;                        /**< Instance number of the MTA Handset. Unique identifier for each handset. */
     BOOLEAN Status;                              /**< Status of the MTA Handset. Indicates if the handset is active or inactive. */
     char LastActiveTime[64];                     /**< Last Active Time of the MTA Handset. Records the last time the handset was active. */
-    char HandsetName[64];                        /**< Name the handset is configured with, as text in a 64-byte field. This interface does not say who assigns it, does not require it to be unique across handsets, and publishes no value meaning "unnamed", so a caller identifies a handset by `InstanceNumber` rather than by this member. */
-    char HandsetFirmware[64];                    /**< Firmware version running on the handset, as text in a 64-byte field. This interface states no format for it, so a caller compares it for equality or displays it rather than ordering it. */
+    char HandsetName[64];                        /*!< Name the handset is configured with, as text in a 64-byte field. This interface does not say who assigns it, does not require it to be unique across handsets, and publishes no value meaning "unnamed", so a caller identifies a handset by `InstanceNumber` rather than by this member. */
+    char HandsetFirmware[64];                    /*!< Firmware version running on the handset, as text in a 64-byte field. This interface states no format for it, so a caller compares it for equality or displays it rather than ordering it. */
     char OperatingTN[64];                        /**< Operating TN. Indicates the Telephone Number (TN) the handset is operating on. Currently, only TN1 is assigned to DECT phones. */
     char SupportedTN[64];                        /**< Supported TN. Indicates the Telephone Number (TN) supported by the handset. Currently, only TN1 is assigned to DECT phones. */
 } MTAMGMT_MTA_HANDSETS_INFO, *PMTAMGMT_MTA_HANDSETS_INFO;
@@ -237,7 +236,7 @@ typedef struct _MTAMGMT_MTA_DHCP_INFO
 {
     ANSC_IPV4_ADDRESS IPAddress;               /**< IP Address assigned to the MTA. */
     CHAR BootFileName[256];                     /**< Boot file name received from the DHCP server. */
-    CHAR FQDN[64];                             /**< Fully qualified domain name obtained with the IPv4 lease, as text in a 64-byte field. This interface does not state whether it names the MTA itself or the server that supplied the lease, states no format beyond it being a domain name, and publishes no value meaning "none supplied" - so a caller must not read an empty field as a distinct outcome. */
+    CHAR FQDN[64];                             /*!< Fully qualified domain name obtained with the IPv4 lease, as text in a 64-byte field. This interface does not state whether it names the MTA itself or the server that supplied the lease, states no format beyond it being a domain name, and publishes no value meaning "none supplied" - so a caller must not read an empty field as a distinct outcome. */
     ANSC_IPV4_ADDRESS SubnetMask;              /**< Subnet mask for the IP address. */
     ANSC_IPV4_ADDRESS Gateway;                 /**< Default gateway IP address. */
     ULONG LeaseTimeRemaining;                  /**< Remaining lease time in seconds. */
@@ -245,11 +244,11 @@ typedef struct _MTAMGMT_MTA_DHCP_INFO
     CHAR RenewTimeRemaining[64];               /**< Remaining time to renew in seconds. */
     ANSC_IPV4_ADDRESS PrimaryDNS;              /**< Primary DNS server IP address. */
     ANSC_IPV4_ADDRESS SecondaryDNS;            /**< Secondary DNS server IP address. */
-    CHAR DHCPOption3[64];                      /**< Value of the custom DHCP option 3 carried with the MTA's IPv4 lease, as text in a 64-byte field. This interface does not say whether the value originates with the DHCP server or with local configuration, and states no encoding for it - whether the bytes are rendered as text, as hex or as an address - and publishes no value meaning "the option was absent", so a caller establishes the encoding with its implementation and must not read an empty field as a distinct outcome. The three option members below carry the same caveats. */
-    CHAR DHCPOption6[64];                      /**< Value of the custom DHCP option 6, on the same terms as `DHCPOption3`. */
-    CHAR DHCPOption7[64];                      /**< Value of the custom DHCP option 7, on the same terms as `DHCPOption3`. */
-    CHAR DHCPOption8[64];                      /**< Value of the custom DHCP option 8, on the same terms as `DHCPOption3`. Note that the same four member names appear in `MTAMGMT_MTA_DHCPv6_INFO`, where DHCPv6 numbers these options differently, so the values are not interchangeable between the two structures. */
-    CHAR PCVersion[64];                        /**< Version string obtained with the lease, as text in a 64-byte field. This interface does not expand the abbreviation "PC", does not say which component the version describes, and states no format for it, so a caller treats the contents as an opaque vendor string. */
+    CHAR DHCPOption3[64];                      /*!< Value of the custom DHCP option 3 carried with the MTA's IPv4 lease, as text in a 64-byte field. This interface does not say whether the value originates with the DHCP server or with local configuration, and states no encoding for it - whether the bytes are rendered as text, as hex or as an address - and publishes no value meaning "the option was absent", so a caller establishes the encoding with its implementation and must not read an empty field as a distinct outcome. The three option members below carry the same caveats. */
+    CHAR DHCPOption6[64];                      /*!< Value of the custom DHCP option 6, on the same terms as `DHCPOption3`. */
+    CHAR DHCPOption7[64];                      /*!< Value of the custom DHCP option 7, on the same terms as `DHCPOption3`. */
+    CHAR DHCPOption8[64];                      /*!< Value of the custom DHCP option 8, on the same terms as `DHCPOption3`. Note that the same four member names appear in `MTAMGMT_MTA_DHCPv6_INFO`, where DHCPv6 numbers these options differently, so the values are not interchangeable between the two structures. */
+    CHAR PCVersion[64];                        /*!< Version string obtained with the lease, as text in a 64-byte field. This interface does not expand the abbreviation "PC", does not say which component the version describes, and states no format for it, so a caller treats the contents as an opaque vendor string. */
     CHAR MACAddress[64];                       /**< MAC address of the MTA. */
     ANSC_IPV4_ADDRESS PrimaryDHCPServer;       /**< Primary DHCP server IP address. */
     ANSC_IPV4_ADDRESS SecondaryDHCPServer;     /**< Secondary DHCP server IP address. */
@@ -270,7 +269,7 @@ typedef struct _MTAMGMT_MTA_DHCPv6_INFO
 {
     CHAR IPV6Address[INET6_ADDRSTRLEN];                 /**< IPv6 Address assigned to the MTA. */
     CHAR BootFileName[256];                             /**< Boot file name received from the DHCPv6 server. */
-    CHAR FQDN[64];                                     /**< Fully qualified domain name obtained with the IPv6 lease, as text in a 64-byte field, with the same caveats as the IPv4 structure's member of the same name: this interface does not say which entity it names and publishes no value meaning "none supplied". */
+    CHAR FQDN[64];                                     /*!< Fully qualified domain name obtained with the IPv6 lease, as text in a 64-byte field, with the same caveats as the IPv4 structure's member of the same name: this interface does not say which entity it names and publishes no value meaning "none supplied". */
     CHAR Prefix[INET6_ADDRSTRLEN];                     /**< Network prefix associated with the IPv6 address. */
     CHAR Gateway[INET6_ADDRSTRLEN];                    /**< Default gateway IPv6 address. */
     ULONG LeaseTimeRemaining;                          /**< Remaining lease time in seconds. */
@@ -278,11 +277,11 @@ typedef struct _MTAMGMT_MTA_DHCPv6_INFO
     CHAR RenewTimeRemaining[64];                       /**< Remaining time to renew in seconds */
     CHAR PrimaryDNS[INET6_ADDRSTRLEN];                 /**< Primary DNS server IPv6 address. */
     CHAR SecondaryDNS[INET6_ADDRSTRLEN];               /**< Secondary DNS server IPv6 address. */
-    CHAR DHCPOption3[64];                              /**< Value of the custom DHCP option 3 carried with the MTA's IPv6 lease, as text in a 64-byte field. As in the IPv4 structure, this interface does not say where the value originates and states no encoding and publishes no value meaning "the option was absent"; and because DHCPv6 numbers its options independently of DHCPv4, this member is not the IPv6 counterpart of `MTAMGMT_MTA_DHCP_INFO::DHCPOption3`. The three option members below carry the same caveats. */
-    CHAR DHCPOption6[64];                              /**< Value of the custom DHCP option 6, on the same terms as the member above. */
-    CHAR DHCPOption7[64];                              /**< Value of the custom DHCP option 7, on the same terms as the member above. */
-    CHAR DHCPOption8[64];                              /**< Value of the custom DHCP option 8, on the same terms as the member above. */
-    CHAR PCVersion[64];                                /**< Version string obtained with the lease, as text in a 64-byte field. This interface does not expand the abbreviation "PC", does not say which component the version describes, and states no format for it, so a caller treats the contents as an opaque vendor string. */
+    CHAR DHCPOption3[64];                              /*!< Value of the custom DHCP option 3 carried with the MTA's IPv6 lease, as text in a 64-byte field. As in the IPv4 structure, this interface does not say where the value originates and states no encoding and publishes no value meaning "the option was absent"; and because DHCPv6 numbers its options independently of DHCPv4, this member is not the IPv6 counterpart of `MTAMGMT_MTA_DHCP_INFO::DHCPOption3`. The three option members below carry the same caveats. */
+    CHAR DHCPOption6[64];                              /*!< Value of the custom DHCP option 6, on the same terms as the member above. */
+    CHAR DHCPOption7[64];                              /*!< Value of the custom DHCP option 7, on the same terms as the member above. */
+    CHAR DHCPOption8[64];                              /*!< Value of the custom DHCP option 8, on the same terms as the member above. */
+    CHAR PCVersion[64];                                /*!< Version string obtained with the lease, as text in a 64-byte field. This interface does not expand the abbreviation "PC", does not say which component the version describes, and states no format for it, so a caller treats the contents as an opaque vendor string. */
     CHAR MACAddress[64];                               /**< The telephony IPv6 MAC address for this device. */
     CHAR PrimaryDHCPv6Server[INET6_ADDRSTRLEN];        /**< Primary DHCPv6 server IPv6 address. */
     CHAR SecondaryDHCPv6Server[INET6_ADDRSTRLEN];      /**< Secondary DHCPv6 server IPv6 address. */
@@ -304,16 +303,16 @@ typedef struct _MTAMGMT_MTA_SERVICE_FLOW
     ULONG SFID;                              /**< Service Flow ID. Unique identifier for the service flow. */
     CHAR ServiceClassName[256];              /**< Name of the service class. Used to identify the type of service the flow is associated with. */
     CHAR Direction[16];                      /**< Direction of the service flow. Can be 'Upstream' or 'Downstream'. */
-    ULONG ScheduleType;                      /**< Scheduling mechanism the flow is served with. This interface publishes no set of values for it and names no external enumeration, so a caller cannot map a value to a scheduling type from this header alone and must establish the encoding with its implementation. */
-    BOOLEAN DefaultFlow;                     /**< TRUE when this element is the default service flow, FALSE otherwise. This interface does not state whether exactly one element of the array `mta_hal_GetServiceFlow()` returns carries TRUE, so a caller must not rely on finding precisely one. */
-    ULONG NomGrantInterval;                  /**< Nominal interval between grants for this flow. This interface states no unit for the value and no valid range beyond that of `ULONG`, and publishes no value meaning "not applicable to this scheduling type" - so a caller establishes the unit with its implementation before comparing or converting it. The eight numeric members below are stated on the same terms. */
-    ULONG UnsolicitGrantSize;                /**< Size of a grant issued without a request. No unit is stated. */
-    ULONG TolGrantJitter;                    /**< Largest deviation from the nominal grant interval the flow tolerates. No unit is stated. */
-    ULONG NomPollInterval;                   /**< Nominal interval between polls for this flow. No unit is stated. */
-    ULONG MinReservedPkt;                    /**< Minimum reserved packet size for the flow. No unit is stated. */
-    ULONG MaxTrafficRate;                    /**< Peak traffic rate the flow is allowed. No unit is stated. */
-    ULONG MinReservedRate;                   /**< Minimum data rate reserved for the flow. No unit is stated. */
-    ULONG MaxTrafficBurst;                   /**< Largest burst of traffic the flow is allowed. No unit is stated. */
+    ULONG ScheduleType;                      /*!< Scheduling mechanism the flow is served with. This interface publishes no set of values for it and names no external enumeration, so a caller cannot map a value to a scheduling type from this header alone and must establish the encoding with its implementation. */
+    BOOLEAN DefaultFlow;                     /*!< TRUE when this element is the default service flow, FALSE otherwise. This interface does not state whether exactly one element of the array `mta_hal_GetServiceFlow()` returns carries TRUE, so a caller must not rely on finding precisely one. */
+    ULONG NomGrantInterval;                  /*!< Nominal interval between grants for this flow. This interface states no unit for the value and no valid range beyond that of `ULONG`, and publishes no value meaning "not applicable to this scheduling type" - so a caller establishes the unit with its implementation before comparing or converting it. The eight numeric members below are stated on the same terms. */
+    ULONG UnsolicitGrantSize;                /*!< Size of a grant issued without a request. No unit is stated. */
+    ULONG TolGrantJitter;                    /*!< Largest deviation from the nominal grant interval the flow tolerates. No unit is stated. */
+    ULONG NomPollInterval;                   /*!< Nominal interval between polls for this flow. No unit is stated. */
+    ULONG MinReservedPkt;                    /*!< Minimum reserved packet size for the flow. No unit is stated. */
+    ULONG MaxTrafficRate;                    /*!< Peak traffic rate the flow is allowed. No unit is stated. */
+    ULONG MinReservedRate;                   /*!< Minimum data rate reserved for the flow. No unit is stated. */
+    ULONG MaxTrafficBurst;                   /*!< Largest burst of traffic the flow is allowed. No unit is stated. */
     CHAR TrafficType[64];                    /**< Type of traffic. Can be 'SIP', 'RTP', or other types depending on the application. */
     ULONG NumberOfPackets;                   /**< Packet count. Number of packets that have been processed by this service flow. */
 } MTAMGMT_MTA_SERVICE_FLOW, *PMTAMGMT_MTA_SERVICE_FLOW;
@@ -327,25 +326,25 @@ typedef struct _MTAMGMT_MTA_SERVICE_FLOW
  */
 typedef struct _MTAMGMT_MTA_CALLS
 {
-    CHAR Codec[64];                                    /**< Name of the codec the local end used for this call, as text in a 64-byte field. This interface publishes no set of permitted names and no value meaning "unknown", so a caller compares the string against names it has established with its implementation rather than against a vocabulary defined here. */
-    CHAR RemoteCodec[64];                              /**< Name of the codec the far end used for this call, with the same representation and the same absence of a defined vocabulary as `Codec`. It need not equal `Codec`: this interface does not state that the two ends negotiated the same codec. */
-    CHAR CallStartTime[64];                            /**< Time at which the call started, as text in a 64-byte field. This interface states no format, no time zone and no epoch for it, and publishes no value meaning "unknown", so a caller must not parse it or order calls by it until it has established the format with its implementation. */
-    CHAR CallEndTime[64];                              /**< Time at which the call ended, in the same unspecified text format as `CallStartTime`. This interface does not state what the member holds while a call is still in progress, so its content is not a reliable test of whether the call has ended. */
-    CHAR CWErrorRate[MTA_HAL_SHORT_VALUE_LEN];         /**< Rate of code word errors reported for this call, as text in a 16-byte field. The neighbouring `CWErrors` reports a count of code word errors; this interface does not state what this member expresses that count as - it gives no denominator, no interval over which the rate is computed, no unit and no scale - and it publishes no value meaning "not measured". It is not a ratio of signal to noise: that quantity is the separate `SNR` member below. A caller therefore renders or forwards the text and establishes the representation with its implementation before comparing, averaging or thresholding it. */
-    CHAR PktLossConcealment[MTA_HAL_SHORT_VALUE_LEN];  /**< Packet loss concealment for the local end of this call, as text in a 16-byte field. Concealment is the treatment applied to compensate for packets that did not arrive, not a measure of how many were lost, and this interface does not state what the member reports about it: it names no quantity, no unit, no scale and no interval, publishes no set of permitted values, and defines no value meaning "not measured" or "none applied". Loss itself is reported elsewhere in this structure - `LossRate` as a fraction scaled by 256 and `PacketLoss` as a count - so a caller must not read this member as either of those, and establishes what it holds with its implementation before interpreting it. */
-    BOOLEAN JitterBufferAdaptive;                      /**< TRUE when the local end used an adaptive jitter buffer for this call, FALSE when it used a fixed one - the interface names no third possibility and no value for "not known". `JitterBufRate` reports the buffer's adjustment rate; this interface does not state what that member holds when this one is FALSE, so a caller does not read the two as a pair without establishing that with its implementation. */
+    CHAR Codec[64];                                    /*!< Name of the codec the local end used for this call, as text in a 64-byte field. This interface publishes no set of permitted names and no value meaning "unknown", so a caller compares the string against names it has established with its implementation rather than against a vocabulary defined here. */
+    CHAR RemoteCodec[64];                              /*!< Name of the codec the far end used for this call, with the same representation and the same absence of a defined vocabulary as `Codec`. It need not equal `Codec`: this interface does not state that the two ends negotiated the same codec. */
+    CHAR CallStartTime[64];                            /*!< Time at which the call started, as text in a 64-byte field. This interface states no format, no time zone and no epoch for it, and publishes no value meaning "unknown", so a caller must not parse it or order calls by it until it has established the format with its implementation. */
+    CHAR CallEndTime[64];                              /*!< Time at which the call ended, in the same unspecified text format as `CallStartTime`. This interface does not state what the member holds while a call is still in progress, so its content is not a reliable test of whether the call has ended. */
+    CHAR CWErrorRate[MTA_HAL_SHORT_VALUE_LEN];         /*!< Rate of code word errors reported for this call, as text in a 16-byte field. The neighbouring `CWErrors` reports a count of code word errors; this interface does not state what this member expresses that count as - it gives no denominator, no interval over which the rate is computed, no unit and no scale - and it publishes no value meaning "not measured". It is not a ratio of signal to noise: that quantity is the separate `SNR` member below. A caller therefore renders or forwards the text and establishes the representation with its implementation before comparing, averaging or thresholding it. */
+    CHAR PktLossConcealment[MTA_HAL_SHORT_VALUE_LEN];  /*!< Packet loss concealment for the local end of this call, as text in a 16-byte field. Concealment is the treatment applied to compensate for packets that did not arrive, not a measure of how many were lost, and this interface does not state what the member reports about it: it names no quantity, no unit, no scale and no interval, publishes no set of permitted values, and defines no value meaning "not measured" or "none applied". Loss itself is reported elsewhere in this structure - `LossRate` as a fraction scaled by 256 and `PacketLoss` as a count - so a caller must not read this member as either of those, and establishes what it holds with its implementation before interpreting it. */
+    BOOLEAN JitterBufferAdaptive;                      /*!< TRUE when the local end used an adaptive jitter buffer for this call, FALSE when it used a fixed one - the interface names no third possibility and no value for "not known". `JitterBufRate` reports the buffer's adjustment rate; this interface does not state what that member holds when this one is FALSE, so a caller does not read the two as a pair without establishing that with its implementation. */
     BOOLEAN Originator;                                /**< Indicates if the local side is the originating side of the call. */
-    ANSC_IPV4_ADDRESS RemoteIPAddress;                 /**< IPv4 address of the far end of the call, in the two-view `ANSC_IPV4_ADDRESS` union: read it as the four octets of `Dot` in network byte order, or as `Value`, which is the same storage seen as a `uint32_t` and therefore not in host byte order. This interface publishes no value meaning "unknown" or "not applicable", so a caller cannot distinguish an unset member from the address 0.0.0.0 and must decide what an all-zero value means for its own purposes. */
+    ANSC_IPV4_ADDRESS RemoteIPAddress;                 /*!< IPv4 address of the far end of the call, in the two-view `ANSC_IPV4_ADDRESS` union: read it as the four octets of `Dot` in network byte order, or as `Value`, which is the same storage seen as a `uint32_t` and therefore not in host byte order. This interface publishes no value meaning "unknown" or "not applicable", so a caller cannot distinguish an unset member from the address 0.0.0.0 and must decide what an all-zero value means for its own purposes. */
     ULONG CallDuration;                                /**< Duration of the call in minutes. */
     CHAR CWErrors[MTA_HAL_SHORT_VALUE_LEN];            /**< Code Word Errors on this channel. */
-    CHAR SNR[MTA_HAL_SHORT_VALUE_LEN];                 /**< Signal-to-noise ratio reported for this call, as text in a 16-byte field. This interface does not say what the ratio is measured between, and - unlike the neighbouring `DownstreamPower` and `UpstreamPower`, which it states in dBmV - gives no unit and no valid range for it, so a caller establishes both with its implementation before comparing values. */
+    CHAR SNR[MTA_HAL_SHORT_VALUE_LEN];                 /*!< Signal-to-noise ratio reported for this call, as text in a 16-byte field. This interface does not say what the ratio is measured between, and - unlike the neighbouring `DownstreamPower` and `UpstreamPower`, which it states in dBmV - gives no unit and no valid range for it, so a caller establishes both with its implementation before comparing values. */
     CHAR MicroReflections[MTA_HAL_SHORT_VALUE_LEN];    /**< Micro Reflections. Return loss measurement. */
     CHAR DownstreamPower[MTA_HAL_SHORT_VALUE_LEN];     /**< Downstream power in dBmV. */
     CHAR UpstreamPower[MTA_HAL_SHORT_VALUE_LEN];       /**< Upstream power in dBmV. */
-    CHAR EQIAverage[MTA_HAL_SHORT_VALUE_LEN];          /**< The average of the call's EQI readings, as text in a 16-byte field. This interface does not expand the abbreviation EQI, name the quantity it measures, or state its unit, scale, direction of goodness or valid range, and publishes no value meaning "not measured" - so a caller renders or forwards the text and does not compare, average or threshold it until it has established those with its implementation. The three EQI members below are stated on the same terms and share the same representation. */
-    CHAR EQIMinimum[MTA_HAL_SHORT_VALUE_LEN];          /**< The smallest of the call's EQI readings. Which end of the undefined scale is the better one is not stated, so a caller must not read this as the worst reading of the call. */
-    CHAR EQIMaximum[MTA_HAL_SHORT_VALUE_LEN];          /**< The largest of the call's EQI readings, with the same caveat as `EQIMinimum` about which end of the scale is better. */
-    CHAR EQIInstantaneous[MTA_HAL_SHORT_VALUE_LEN];    /**< A single EQI reading rather than an aggregate. This interface does not state when it was taken, over what interval any of the four are computed, or how often readings occur, so a caller must not treat it as current at the moment of the call and must not assume it falls between `EQIMinimum` and `EQIMaximum`. */
+    CHAR EQIAverage[MTA_HAL_SHORT_VALUE_LEN];          /*!< The average of the call's EQI readings, as text in a 16-byte field. This interface does not expand the abbreviation EQI, name the quantity it measures, or state its unit, scale, direction of goodness or valid range, and publishes no value meaning "not measured" - so a caller renders or forwards the text and does not compare, average or threshold it until it has established those with its implementation. The three EQI members below are stated on the same terms and share the same representation. */
+    CHAR EQIMinimum[MTA_HAL_SHORT_VALUE_LEN];          /*!< The smallest of the call's EQI readings. Which end of the undefined scale is the better one is not stated, so a caller must not read this as the worst reading of the call. */
+    CHAR EQIMaximum[MTA_HAL_SHORT_VALUE_LEN];          /*!< The largest of the call's EQI readings, with the same caveat as `EQIMinimum` about which end of the scale is better. */
+    CHAR EQIInstantaneous[MTA_HAL_SHORT_VALUE_LEN];    /*!< A single EQI reading rather than an aggregate. This interface does not state when it was taken, over what interval any of the four are computed, or how often readings occur, so a caller must not treat it as current at the moment of the call and must not assume it falls between `EQIMinimum` and `EQIMaximum`. */
     CHAR MOS_LQ[MTA_HAL_SHORT_VALUE_LEN];              /**< Mean Opinion Score of Listening Quality. Scale: 10-50. */
     CHAR MOS_CQ[MTA_HAL_SHORT_VALUE_LEN];              /**< Mean Opinion Score of Conversational Quality. Scale: 10-50. */
     CHAR EchoReturnLoss[MTA_HAL_SHORT_VALUE_LEN];      /**< Residual Echo Return Loss, in dB. */
@@ -358,7 +357,7 @@ typedef struct _MTAMGMT_MTA_CALLS
     CHAR BurstDuration[MTA_HAL_SHORT_VALUE_LEN];       /**< Mean duration of bursts, in milliseconds. */
     CHAR GapDuration[MTA_HAL_SHORT_VALUE_LEN];         /**< Mean duration of gaps, in milliseconds. */
     CHAR RoundTripDelay[MTA_HAL_SHORT_VALUE_LEN];      /**< Most recent measured RTD, in milliseconds. */
-    CHAR Gmin[MTA_HAL_SHORT_VALUE_LEN];                /**< Local gap threshold, which this interface describes through its remote counterpart `RemoteGmin` as the threshold used in burst calculations, as text in a 16-byte field. It states neither the unit nor the range of the value, and does not say which of the burst and gap members above it parameterises or how, so a caller reports it alongside those members rather than recomputing any of them from it. */
+    CHAR Gmin[MTA_HAL_SHORT_VALUE_LEN];                /*!< Local gap threshold, which this interface describes through its remote counterpart `RemoteGmin` as the threshold used in burst calculations, as text in a 16-byte field. It states neither the unit nor the range of the value, and does not say which of the burst and gap members above it parameterises or how, so a caller reports it alongside those members rather than recomputing any of them from it. */
     CHAR RFactor[MTA_HAL_SHORT_VALUE_LEN];             /**< Voice quality evaluation for this RTP session. */
     CHAR ExternalRFactor[MTA_HAL_SHORT_VALUE_LEN];     /**< Voice quality evaluation for a segment on the network external to this RTP session. */
     CHAR JitterBufRate[MTA_HAL_SHORT_VALUE_LEN];       /**< Adjustment rate of the jitter buffer, in milliseconds. */
@@ -378,7 +377,7 @@ typedef struct _MTAMGMT_MTA_CALLS
     CHAR RemoteSignalLevel[MTA_HAL_SHORT_VALUE_LEN];           /**< Signal Level at the remote side. Measures the strength of the signal. */
     CHAR RemoteNoiseLevel[MTA_HAL_SHORT_VALUE_LEN];            /**< Noise Level at the remote side. Measures the level of background noise. */
     CHAR RemoteLossRate[MTA_HAL_SHORT_VALUE_LEN];              /**< Loss Rate at the remote side. Fraction of RTP data packet loss. */
-    CHAR RemotePktLossConcealment[MTA_HAL_SHORT_VALUE_LEN];    /**< Packet loss concealment at the far end, on the same terms as `PktLossConcealment`: the member names the concealment applied rather than a measure of loss, and this interface states no quantity, unit, scale, interval or permitted value set for it, and no value meaning "not measured". Remote loss itself is reported by `RemoteLossRate`. This interface also does not state how the local end obtains the far end's value or over what interval it was produced, so a caller does not compare it with the local member without establishing that with its implementation. */
+    CHAR RemotePktLossConcealment[MTA_HAL_SHORT_VALUE_LEN];    /*!< Packet loss concealment at the far end, on the same terms as `PktLossConcealment`: the member names the concealment applied rather than a measure of loss, and this interface states no quantity, unit, scale, interval or permitted value set for it, and no value meaning "not measured". Remote loss itself is reported by `RemoteLossRate`. This interface also does not state how the local end obtains the far end's value or over what interval it was produced, so a caller does not compare it with the local member without establishing that with its implementation. */
     CHAR RemoteDiscardRate[MTA_HAL_SHORT_VALUE_LEN];           /**< Discard Rate at the remote side. Fraction of RTP data packets discarded during transmission. */
     CHAR RemoteBurstDensity[MTA_HAL_SHORT_VALUE_LEN];          /**< Burst Density at the remote side. Fraction of packets in a burst compared to total packets. */
     CHAR RemoteGapDensity[MTA_HAL_SHORT_VALUE_LEN];            /**< Gap Density at the remote side. Fraction of packets within inter-burst gaps. */
@@ -388,7 +387,7 @@ typedef struct _MTAMGMT_MTA_CALLS
     CHAR RemoteGmin[MTA_HAL_SHORT_VALUE_LEN];                 /**< Gmin at the remote side. Specifies the gap threshold used in burst calculations. */
     CHAR RemoteRFactor[MTA_HAL_SHORT_VALUE_LEN];              /**< R-Factor at the remote side. Voice quality evaluation metric for the remote RTP session. */
     CHAR RemoteExternalRFactor[MTA_HAL_SHORT_VALUE_LEN];      /**< External R-Factor at the remote side. Voice quality evaluation for segments on the network external to the remote RTP session. */
-    BOOLEAN RemoteJitterBufferAdaptive;                       /**< TRUE when the far end used an adaptive jitter buffer, FALSE when it used a fixed one, on the same terms as `JitterBufferAdaptive`. This interface does not state how the local end learns it, so a caller must not assume the value was reported by the far end rather than inferred. */
+    BOOLEAN RemoteJitterBufferAdaptive;                       /*!< TRUE when the far end used an adaptive jitter buffer, FALSE when it used a fixed one, on the same terms as `JitterBufferAdaptive`. This interface does not state how the local end learns it, so a caller must not assume the value was reported by the far end rather than inferred. */
     CHAR RemoteJitterBufRate[MTA_HAL_SHORT_VALUE_LEN];        /**< Adjustment rate of the remote jitter buffer in milliseconds. */
     CHAR RemoteJBNominalDelay[MTA_HAL_SHORT_VALUE_LEN];       /**< Nominal jitter buffer length at the remote side in milliseconds. */
     CHAR RemoteJBMaxDelay[MTA_HAL_SHORT_VALUE_LEN];           /**< Maximum jitter buffer length at the remote side in milliseconds. */
@@ -409,8 +408,8 @@ typedef struct _MTAMGMT_MTA_CALLS
  */
 typedef struct _MTAMGMT_MTA_LINETABLE_INFO
 {
-    ULONG InstanceNumber;                         /**< Identifier of this line within the MTA line table, and the value a caller passes as `InstanceNumber` to mta_hal_GetCalls() and mta_hal_ClearCalls(). Range is that of `ULONG`; this interface states neither the numbering base nor whether the values are contiguous, so a caller obtains one by reading the table with mta_hal_LineTableGetEntry() rather than by computing it. Note that it is not the zero-based `Index` argument of that call. */
-    ULONG LineNumber;                             /**< Number of the physical voice line this entry describes. `MTA_LINENUMBER` (8) is the line count this interface accounts for, but nothing here binds this member to that macro: the interface states neither its numbering base nor whether it equals `InstanceNumber` or the table index, and publishes no value meaning "unassigned". A caller therefore uses it for display and for correlation with vendor records, and uses `InstanceNumber` for the calls into this interface. */
+    ULONG InstanceNumber;                         /*!< Identifier of this line within the MTA line table, and the value a caller passes as `InstanceNumber` to mta_hal_GetCalls() and mta_hal_ClearCalls(). Range is that of `ULONG`; this interface states neither the numbering base nor whether the values are contiguous, so a caller obtains one by reading the table with mta_hal_LineTableGetEntry() rather than by computing it. Note that it is not the zero-based `Index` argument of that call. */
+    ULONG LineNumber;                             /*!< Number of the physical voice line this entry describes. `MTA_LINENUMBER` (8) is the line count this interface accounts for, but nothing here binds this member to that macro: the interface states neither its numbering base nor whether it equals `InstanceNumber` or the table index, and publishes no value meaning "unassigned". A caller therefore uses it for display and for correlation with vendor records, and uses `InstanceNumber` for the calls into this interface. */
     ULONG Status;                                 /**< Line status. 1 = OnHook; 2 = OffHook. */
     CHAR HazardousPotential[128];                 /**< Result of the HEMF (High Electric and Magnetic Fields) test. E.g., 'Passed', 'Not Started'. */
     CHAR ForeignEMF[128];                         /**< Result of the FEMF (Foreign Electromagnetic Fields) test. E.g., 'Passed', 'Not Started'. */
@@ -420,9 +419,9 @@ typedef struct _MTAMGMT_MTA_LINETABLE_INFO
     CHAR CAName[64];                              /**< Circuit Assurance (CA) name associated with this line. */
     ULONG CAPort;                                 /**< Circuit Assurance (CA) port number. */
     ULONG MWD;                                    /**< Message Waiting Indicator. Indicates the presence of a voicemail or similar message. */
-    ULONG CallsNumber;                            /**< Number of `MTAMGMT_MTA_CALLS` elements the array at `pCalls` holds. Zero means the line has no call records, and `pCalls` must not be dereferenced in that case. This interface does not state whether the records are ordered, nor over what period they accumulate. */
-    PMTAMGMT_MTA_CALLS pCalls;                    /**< Address of an array of `CallsNumber` `MTAMGMT_MTA_CALLS` elements holding this line's call records, supplied by the implementation. It must not be dereferenced when `CallsNumber` is zero. This interface does not state which side allocates or releases it, nor how long it stays valid, so a caller neither frees it nor assumes it survives the next MTA HAL call, and copies any record it needs to keep. */
-    ULONG CallsUpdateTime;                        /**< Time at which the implementation last refreshed the records `pCalls` addresses. This interface states no epoch, unit or resolution for the value, so a caller may compare two readings of this member to detect a refresh but must not convert it to a wall-clock time, and no value here means "never updated". */
+    ULONG CallsNumber;                            /*!< Number of `MTAMGMT_MTA_CALLS` elements the array at `pCalls` holds. Zero means the line has no call records, and `pCalls` must not be dereferenced in that case. This interface does not state whether the records are ordered, nor over what period they accumulate. */
+    PMTAMGMT_MTA_CALLS pCalls;                    /*!< Address of an array of `CallsNumber` `MTAMGMT_MTA_CALLS` elements holding this line's call records, supplied by the implementation. It must not be dereferenced when `CallsNumber` is zero. This interface does not state which side allocates or releases it, nor how long it stays valid, so a caller neither frees it nor assumes it survives the next MTA HAL call, and copies any record it needs to keep. */
+    ULONG CallsUpdateTime;                        /*!< Time at which the implementation last refreshed the records `pCalls` addresses. This interface states no epoch, unit or resolution for the value, so a caller may compare two readings of this member to detect a refresh but must not convert it to a wall-clock time, and no value here means "never updated". */
     ULONG OverCurrentFault;                       /**< Over-current fault status. 1 = Normal, 2 = Fault. */
 } MTAMGMT_MTA_LINETABLE_INFO, *PMTAMGMT_MTA_LINETABLE_INFO;
 
@@ -458,7 +457,7 @@ typedef struct _MTAMGMT_MTA_CALLP
  */
 typedef struct _MTAMGMT_MTA_DSXLOG
 {
-    CHAR Time[64];              /**< Time at which the DSX event was recorded, as text in a 64-byte field. This interface states no format for it - unlike `MTAMGMT_MTA_MTALOG_FULL::Time`, which gives "1998-05-14" as an example - so a caller displays it rather than parsing it, and does not assume the two log types agree on a format. */
+    CHAR Time[64];              /*!< Time at which the DSX event was recorded, as text in a 64-byte field. This interface states no format for it - unlike `MTAMGMT_MTA_MTALOG_FULL::Time`, which gives "1998-05-14" as an example - so a caller displays it rather than parsing it, and does not assume the two log types agree on a format. */
     CHAR Description[128];      /**< Description of the log entry. Provides details about the DSX operation or event. */
     ULONG ID;                   /**< Identifier for the log entry. A unique value is provided by the vendor to identify the log entry. */
     ULONG Level;                /**< Log level of the entry. Specifies the severity or importance of the log.  */
@@ -533,11 +532,11 @@ typedef struct _MTAMGMT_MTA_BATTERY_INFO
  *       not a state machine a caller may drive or predict.
  */
 typedef  enum {
-	MTA_INIT=0,         /**< The subject of the question has not started. Read against mta_hal_getMtaOperationalStatus() it means the MTA is not yet operational; this interface does not state what it means for the config-file, DHCP or line-register questions, so a caller treats it as "not started" for whichever of the four it asked. */
-	MTA_START=1,        /**< The subject of the question is under way and has neither completed nor failed. A caller polls the same call again rather than treating this as an outcome; this interface states no interval at which to poll and no bound on how long the value may persist. */
-	MTA_COMPLETE=2,     /**< The subject of the question completed successfully, and it is the only one of the five values that denotes success. Read against mta_hal_getMtaOperationalStatus() this interface glosses it as the MTA being operational; for the config-file, DHCP and line-register questions it offers no per-question gloss, so a caller reads it as success for whichever of the four it asked and no further. */
-	MTA_ERROR=3,        /**< The subject of the question failed. It is a successful answer, not a call failure: a caller distinguishes the two by the RETURN_OK or RETURN_ERR the call returned. This interface does not state why the failure occurred or whether it is retryable. */
-	MTA_REJECTED=4      /**< The subject of the question was refused rather than merely failing - a configuration file the MTA declined to accept is the case mta_hal_getConfigFileStatus() documents. Like MTA_ERROR it is a successful answer, and this interface does not state what a rejection means for the other three questions the enumeration serves. */
+	MTA_INIT=0,         /*!< The subject of the question has not started. Read against mta_hal_getMtaOperationalStatus() it means the MTA is not yet operational; this interface does not state what it means for the config-file, DHCP or line-register questions, so a caller treats it as "not started" for whichever of the four it asked. */
+	MTA_START=1,        /*!< The subject of the question is under way and has neither completed nor failed. A caller polls the same call again rather than treating this as an outcome; this interface states no interval at which to poll and no bound on how long the value may persist. */
+	MTA_COMPLETE=2,     /*!< The subject of the question completed successfully, and it is the only one of the five values that denotes success. Read against mta_hal_getMtaOperationalStatus() this interface glosses it as the MTA being operational; for the config-file, DHCP and line-register questions it offers no per-question gloss, so a caller reads it as success for whichever of the four it asked and no further. */
+	MTA_ERROR=3,        /*!< The subject of the question failed. It is a successful answer, not a call failure: a caller distinguishes the two by the RETURN_OK or RETURN_ERR the call returned. This interface does not state why the failure occurred or whether it is retryable. */
+	MTA_REJECTED=4      /*!< The subject of the question was refused rather than merely failing - a configuration file the MTA declined to accept is the case mta_hal_getConfigFileStatus() documents. Like MTA_ERROR it is a successful answer, and this interface does not state what a rejection means for the other three questions the enumeration serves. */
 } MTAMGMT_MTA_STATUS;
 
 /**
@@ -1102,26 +1101,23 @@ INT mta_hal_GetDect(PMTAMGMT_MTA_DECT pDect);
 * Returns the PIN a handset must present to pair with the base station. The same
 * value appears as the `PIN` member of `MTAMGMT_MTA_DECT`.
 *
-* @param[out] pPINString - A caller-allocated character buffer that receives the PIN as a zero-terminated string.
+* @param[out] pPINString - A caller-allocated character buffer of at least 128 writable bytes that receives the PIN as a zero-terminated string.
 *                          \n The caller allocates it and retains ownership; the
 *                          implementation writes into it. This interface does not
 *                          state whether the implementation retains the pointer after
 *                          the call returns, so a caller keeps the buffer valid rather
 *                          than reading the return as permission to release or reuse
-*                          it. Must not be NULL. The prior revision of this
-*                          interface documented this parameter as "128 bytes of
-*                          character pointer", so 128 writable bytes is the capacity
-*                          this interface asks a caller to provide. The related
-*                          field `MTAMGMT_MTA_DECT::PIN` is declared 64 bytes, which
-*                          is a narrower store for the same value; this interface does
-*                          not state how the two relate, and in particular does not
-*                          state what happens to that field when a longer value is
-*                          set. A caller sizes this buffer by the documented 128 bytes
-*                          rather than by the field, because that is the larger of the
-*                          two and the only figure stated for this parameter. There is
-*                          no argument through which a caller can declare a smaller
-*                          capacity, and this interface names no constant for this
-*                          buffer, so a caller must not supply less.
+*                          it. Must not be NULL. 128 bytes is the capacity this
+*                          interface states for the parameter, and the only figure it
+*                          states for it. The related field `MTAMGMT_MTA_DECT::PIN` is
+*                          declared 64 bytes, a narrower store for the same value, and
+*                          this interface does not state how the two relate, nor what
+*                          happens to that field when a longer value is set - so the
+*                          field's width is not a bound on this buffer and a caller
+*                          sizes the buffer by the 128 bytes. There is no argument
+*                          through which a caller can declare a smaller capacity, and
+*                          this interface names no constant for this buffer, so a
+*                          caller must not supply less.
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `pPINString` holds a zero-terminated PIN.
@@ -1163,12 +1159,12 @@ INT mta_hal_GetDectPIN(char* pPINString);
 *                         every caller-supplied pointer in this interface, not only
 *                         this one; no declaration here and no statement in the
 *                         repository specification settles it.
-*                         \n Must not be NULL. The prior revision of this interface
-*                         documented this parameter as "a 128 bytes character pointer",
-*                         while the related field `MTAMGMT_MTA_DECT::PIN` is declared 64
-*                         bytes. This interface does not state how the two relate, nor
-*                         what happens to that field when a longer value is set, so
-*                         neither figure can be presented as the bound. It names no
+*                         \n Must not be NULL. This interface states a capacity of 128
+*                         bytes for this parameter, while the related field
+*                         `MTAMGMT_MTA_DECT::PIN` is declared 64 bytes. It does not state
+*                         how the two relate, nor what happens to that field when a
+*                         longer value is set, so neither figure can be presented as the
+*                         bound on the value a caller may set. It names no
 *                         constant for a maximum length and does not state whether the
 *                         implementation validates the length or the character set, so a
 *                         caller should agree the acceptable length with the vendor
@@ -1889,11 +1885,10 @@ INT mta_hal_BatteryGetPowerStatus(CHAR *Val, ULONG *len);
 *                   the implementation writes the length of the value it wrote, this
 *                   interface does not state whether it also reads the argument on entry
 *                   as a capacity, and a caller should therefore initialise it to the size
-*                   of `Val`. Must not be NULL. This definition is marked as an output
-*                   here even though the header's original text marked it as an input,
-*                   because that text described the length as being returned - the marking
-*                   contradicted the description, and the description is what the other
-*                   three calls in this group agree with.
+*                   of `Val`. Must not be NULL. Its direction is the one this interface's
+*                   own definition establishes by describing the length as being returned,
+*                   which is how the other three calls in this group treat their
+*                   equivalent argument.
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `Val` holds a zero-terminated condition string and `*len` its
@@ -1981,10 +1976,9 @@ INT mta_hal_BatteryGetStatus(CHAR* Val, ULONG *len);
 *                   terminator, and must not assume the implementation checks the capacity.
 * @param[out] len - Pointer to an unsigned long conveying the length of the string.
 *                   \n Documented and used exactly as in mta_hal_BatteryGetPowerStatus().
-*                   Must not be NULL. As with mta_hal_BatteryGetCondition(), this
-*                   definition is marked as an output although the header's original text
-*                   marked it as an input, because that text described the length as being
-*                   returned.
+*                   Must not be NULL. As with mta_hal_BatteryGetCondition(), its direction
+*                   is the one this interface's own definition establishes by describing
+*                   the length as being returned.
 *
 * @returns The status of the operation.
 * @retval RETURN_OK  - `Val` holds a zero-terminated life-status string and `*len` its
@@ -2396,10 +2390,6 @@ INT mta_hal_getMtaProvisioningStatus(MTAMGMT_MTA_PROVISION_STATUS *provisionStat
  * @}
  */
 
-/* The definitions below are data types rather than entry points, so they are
- * returned to the MTA_HAL_TYPES group for as long as they last. Only the group
- * markers move; no declaration is reordered. */
-
 /**
  * @addtogroup MTA_HAL_TYPES
  * @{
@@ -2457,13 +2447,13 @@ typedef  enum {
 typedef struct _MTAMGMT_PROVISIONING_PARAMS
 {
 
-INT  MtaIPMode;                                                         /**<  Address family or families to provision the lines in. Takes one ordinal of MTAMGMT_MTA_PROV_IP_MODE: MTA_IPV4 (0), MTA_IPV6 (1) or MTA_DUAL_STACK (2). Declared INT rather than as the enumeration, so no value outside that set is rejected by the type and the caller is responsible for supplying one of the three. */
-INT  DhcpOption2171CccV6DssID1Len;                                      /**<  Number of bytes of DhcpOption2171CccV6DssID1 the caller has filled in, which the implementation reads instead of scanning the field. Declared INT, so the type rejects neither a negative value nor one above the MTA_DHCPOPTION122CCCV6DSSID1_MAX bound of 32; this interface states no default, does not say whether the count includes a terminating byte, and does not say what an out-of-range value does - so a caller sets it to the exact value length it wrote and establishes the terminator convention with its implementation. */
-INT  DhcpOption2171CccV6DssID2Len;                                      /**<  Number of bytes of DhcpOption2171CccV6DssID2 the caller has filled in, on the same terms as DhcpOption2171CccV6DssID1Len and against the MTA_DHCPOPTION122CCCV6DSSID2_MAX bound of 32. */
+INT  MtaIPMode;                                                         /*!<  Address family or families to provision the lines in. Takes one ordinal of MTAMGMT_MTA_PROV_IP_MODE: MTA_IPV4 (0), MTA_IPV6 (1) or MTA_DUAL_STACK (2). Declared INT rather than as the enumeration, so no value outside that set is rejected by the type and the caller is responsible for supplying one of the three. */
+INT  DhcpOption2171CccV6DssID1Len;                                      /*!<  Number of bytes of DhcpOption2171CccV6DssID1 the caller has filled in, which the implementation reads instead of scanning the field. Declared INT, so the type rejects neither a negative value nor one above the MTA_DHCPOPTION122CCCV6DSSID1_MAX bound of 32; this interface states no default, does not say whether the count includes a terminating byte, and does not say what an out-of-range value does - so a caller sets it to the exact value length it wrote and establishes the terminator convention with its implementation. */
+INT  DhcpOption2171CccV6DssID2Len;                                      /*!<  Number of bytes of DhcpOption2171CccV6DssID2 the caller has filled in, on the same terms as DhcpOption2171CccV6DssID1Len and against the MTA_DHCPOPTION122CCCV6DSSID2_MAX bound of 32. */
 CHAR DhcpOption122Suboption1[MTA_DHCPOPTION122SUBOPTION1_MAX+1];        /**<  4 byte hex value ie. FFFFFFFF = "255.255.255.255". IPv4 addresses MUST be encoded as 4 binary octets in network  byte-order (high order byte first). */
 CHAR DhcpOption122Suboption2[MTA_DHCPOPTION122SUBOPTION2_MAX+1];        /**<  4 byte hex value ie. FFFFFFFF = "255.255.255.255" */
-CHAR DhcpOption2171CccV6DssID1[MTA_DHCPOPTION122CCCV6DSSID1_MAX+1];     /**<  32 byte hex value. It is the first DHCPv6 option 2171 CCC DSS identifier the implementation is to provision with, written by the caller, whose length it declares in DhcpOption2171CccV6DssID1Len rather than by terminating the field. This interface states no default and does not say what the implementation does when the member is left empty. */
-CHAR DhcpOption2171CccV6DssID2[MTA_DHCPOPTION122CCCV6DSSID2_MAX+1];     /**<  32 byte hex value. It is the second such identifier, paired with DhcpOption2171CccV6DssID2Len on the same terms as the member above. */
+CHAR DhcpOption2171CccV6DssID1[MTA_DHCPOPTION122CCCV6DSSID1_MAX+1];     /*!<  32 byte hex value. It is the first DHCPv6 option 2171 CCC DSS identifier the implementation is to provision with, written by the caller, whose length it declares in DhcpOption2171CccV6DssID1Len rather than by terminating the field. This interface states no default and does not say what the implementation does when the member is left empty. */
+CHAR DhcpOption2171CccV6DssID2[MTA_DHCPOPTION122CCCV6DSSID2_MAX+1];     /*!<  32 byte hex value. It is the second such identifier, paired with DhcpOption2171CccV6DssID2Len on the same terms as the member above. */
 }
 MTAMGMT_PROVISIONING_PARAMS, *PMTAMGMT_MTA_PROVISIONING_PARAMS;
 

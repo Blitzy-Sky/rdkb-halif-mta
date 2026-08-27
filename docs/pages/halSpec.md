@@ -4,10 +4,10 @@
 
 | Date | Comment | Version |
 | --- | --- | --- |
-| 08/24/26 | Rewritten against the canonical `HAL` specification topic set. Page renamed from `MTAhalSpec.md` to `halSpec.md`. Added `Version History`, `Optional Components`, `Data Structures and Defines`, `API Surface` and `State Diagram`; every one of the 49 declared functions is now named; the asynchronous notification callback is documented for the first time, correcting the previous claim that this interface has none; the sequence diagram now uses declared identifiers only. | 1.1.1 |
-| 02/07/24 | Interface correction release: missing semicolon on the `MTAMGMT_MTA_CALLS` structure in `mta_hal.h`, plus a further header update. | 1.1.0 |
-| 02/02/24 | `BD-1247` — `build_ut.sh` corrected. No interface change. | 1.0.1 |
-| 01/29/24 | `RDKB-52497` — initial release of the MTA HAL interface definition, migrated to GitHub. | 1.0.0 |
+| 2024-01-29 | `RDKB-52497` — initial release of the MTA HAL interface definition, migrated to GitHub. | 1.0.0 |
+| 2024-02-02 | `BD-1247` — `build_ut.sh` corrected. No interface change. | 1.0.1 |
+| 2024-02-07 | Interface correction release: missing semicolon on the `MTAMGMT_MTA_CALLS` structure in `mta_hal.h`, plus a further header update. | 1.1.0 |
+| 2026-08-24 | Rewritten against the canonical `HAL` specification topic set. Page renamed from `MTAhalSpec.md` to `halSpec.md`. Added `Version History`, `Optional Components`, `Data Structures and Defines`, `API Surface` and `State Diagram`; every one of the 49 declared functions is now named; the asynchronous notification callback is documented for the first time, correcting the previous claim that this interface has none; the sequence diagram now uses declared identifiers only. | 1.1.1 |
 
 Four version identities apply to this repository. They are kept apart deliberately, because a caller
 needs a different one in each case and conflating them gives a false impression of how the interface
@@ -20,7 +20,7 @@ is versioned.
 | Release tag | `1.1.0` | The nearest ancestor tag of the revision this document describes, and the latest tag in the repository. Tags carry no `v` prefix. The changelog section for `1.1.0` is undated, so the date in the table above is the tag's own date rather than a changelog entry. |
 | Generated-site version string | A string of the form `<tag>-<commits-since-tag>-g<abbreviated-hash>` | `docs/generate_docs.sh`:26 derives `PROJECT_VERSION` from `git describe --tags` and passes it to the documentation generator. When the working revision is not itself tagged, that output is a build identifier naming a tag plus the commits after it — **not** a released version, and it must not be read as one. No fixed value is quoted here, because it changes with every commit. |
 
-**Provenance of this page.** It was renamed from `docs/pages/MTAhalSpec.md` to `docs/pages/halSpec.md` in the same change that rewrote it against the canonical topic set. Git records a rename only where the two versions still resemble each other, and a full rewrite does not, so `git log --follow -- docs/pages/halSpec.md` begins at that change: the revisions before it are reached with `git log -- docs/pages/MTAhalSpec.md`.
+**Provenance of this page.** It was renamed from `docs/pages/MTAhalSpec.md` to `docs/pages/halSpec.md` in the same change that rewrote it against the canonical topic set. Git records a rename only where the two versions still resemble each other, and a full rewrite does not, so `git log --follow -- docs/pages/halSpec.md` begins at that change: the revisions before it are reached with `git log -- docs/pages/MTAhalSpec.md`. That resemblance is measured, and the threshold is 50% by default, so lowering it to git's floor \- `git log --follow -M1% -- docs/pages/halSpec.md` \- is worth trying first: where it pairs the two paths it shows both stretches of history in one listing, and where the rewrite kept too little of the original for git to pair them at any threshold the second command above remains the only route to the earlier revisions.
 
 *Derived from `CHANGELOG.md` (its three release sections; the `1.1.0` section carries no date, so
 that row's date is the tag's own), the repository's git tags, `docs/generate_docs.sh`:23-30, and

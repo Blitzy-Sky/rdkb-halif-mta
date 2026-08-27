@@ -7,7 +7,7 @@
 | 2024-01-29 | `RDKB-52497` — initial release of the MTA HAL interface definition, migrated to GitHub. | 1.0.0 |
 | 2024-02-02 | `BD-1247` — `build_ut.sh` corrected. No interface change. | 1.0.1 |
 | 2024-02-07 | Interface correction release: missing semicolon on the `MTAMGMT_MTA_CALLS` structure in `mta_hal.h`, plus a further header update. | 1.1.0 |
-| 2026-08-24 | Rewritten against the canonical `HAL` specification topic set. Page renamed from `MTAhalSpec.md` to `halSpec.md`. Added `Version History`, `Optional Components`, `Data Structures and Defines`, `API Surface` and `State Diagram`; every one of the 49 declared functions is now named; the asynchronous notification callback is documented for the first time, correcting the previous claim that this interface has none; the sequence diagram now uses declared identifiers only. | 1.1.1 |
+| 2026-08-24 | Rewritten against the canonical `HAL` specification topic set. Page renamed from `MTAhalSpec.md` to [halSpec.md](halSpec.md). Added `Version History`, `Optional Components`, `Data Structures and Defines`, `API Surface` and `State Diagram`; every one of the 49 declared functions is now named; the asynchronous notification callback is documented for the first time, correcting the previous claim that this interface has none; the sequence diagram now uses declared identifiers only. | 1.1.1 |
 
 Four version identities apply to this repository. They are kept apart deliberately, because a caller
 needs a different one in each case and conflating them gives a false impression of how the interface
@@ -20,11 +20,12 @@ is versioned.
 | Release tag | `1.1.0` | The nearest ancestor tag of the revision this document describes, and the latest tag in the repository. Tags carry no `v` prefix. The changelog section for `1.1.0` is undated, so the date in the table above is the tag's own date rather than a changelog entry. |
 | Generated-site version string | A string of the form `<tag>-<commits-since-tag>-g<abbreviated-hash>` | `docs/generate_docs.sh`:26 derives `PROJECT_VERSION` from `git describe --tags` and passes it to the documentation generator. When the working revision is not itself tagged, that output is a build identifier naming a tag plus the commits after it — **not** a released version, and it must not be read as one. No fixed value is quoted here, because it changes with every commit. |
 
-**Provenance of this page.** It was renamed from `docs/pages/MTAhalSpec.md` to `docs/pages/halSpec.md` in the same change that rewrote it against the canonical topic set. Git records a rename only where the two versions still resemble each other, and a full rewrite does not, so `git log --follow -- docs/pages/halSpec.md` begins at that change: the revisions before it are reached with `git log -- docs/pages/MTAhalSpec.md`. That resemblance is measured, and the threshold is 50% by default, so lowering it to git's floor \- `git log --follow -M1% -- docs/pages/halSpec.md` \- is worth trying first: where it pairs the two paths it shows both stretches of history in one listing, and where the rewrite kept too little of the original for git to pair them at any threshold the second command above remains the only route to the earlier revisions.
+**Provenance of this page.** It was renamed from `docs/pages/MTAhalSpec.md` to the canonical [halSpec.md](halSpec.md) in the same change that rewrote it against the canonical topic set. Git records a rename only where the two versions still resemble each other, and a full rewrite does not, so `git log --follow -- ./docs/pages/halSpec.md` begins at that change: the revisions before it are reached with `git log -- docs/pages/MTAhalSpec.md`. That resemblance is measured, and the threshold is 50% by default, so lowering it to git's floor \- `git log --follow -M1% -- ./docs/pages/halSpec.md` \- is worth trying first: where it pairs the two paths it shows both stretches of history in one listing, and where the rewrite kept too little of the original for git to pair them at any threshold the second command above remains the only route to the earlier revisions.
 
-*Derived from `CHANGELOG.md` (its three release sections; the `1.1.0` section carries no date, so
-that row's date is the tag's own), the repository's git tags, `docs/generate_docs.sh`:23-30, and
-[`include/mta_hal.h`](../../include/mta_hal.h), which declares no version macro.*
+*Derived from the repository's changelog (its three release sections; the `1.1.0` section
+carries no date, so that row's date is the tag's own), the repository's git tags,
+`docs/generate_docs.sh`:23-30, and
+`include/mta_hal.h`, which declares no version macro.*
 
 ## Acronyms
 
@@ -44,10 +45,10 @@ that row's date is the tag's own), the repository's git tags, `docs/generate_doc
 - `SLA` \- Service Level Agreement
 - `TN` \- Telephone Number
 
-*Bounded to the terms this document uses. `TN` is the spelling the interface itself uses, in the
+<em>Bounded to the terms this document uses. `TN` is the spelling the interface itself uses, in the
 `OperatingTN` and `SupportedTN` members of `MTAMGMT_MTA_HANDSETS_INFO`
-([`include/mta_hal.h`](../../include/mta_hal.h):223-224); `GR909` and `DOCSIS` come from the briefs
-of `mta_hal_TriggerDiagnostics` (:810) and `mta_hal_GetServiceFlow` (:850).*
+(`include/mta_hal.h`:223-224); `GR909` and `DOCSIS` come from the briefs
+of `mta_hal_TriggerDiagnostics` (:810) and `mta_hal_GetServiceFlow` (:850).</em>
 
 ## Description
 
@@ -68,7 +69,7 @@ functions, so that a caller works against a fixed contract rather than against a
 implementation.
 
 This repository carries the **interface definition only**.
-[`include/mta_hal.h`](../../include/mta_hal.h) declares 49 functions, the data types they exchange
+`include/mta_hal.h` declares 49 functions, the data types they exchange
 and the status values they report; each vendor or `OEM` ships its own implementation behind that
 contract as a shared library. Nothing in this repository implements the interface, and nothing in it
 builds.
@@ -88,13 +89,13 @@ For a caller, the interface covers seven things:
 - **Lines, telephone numbers and registration status** — how many entries the line table holds, the
   state and loop-test results of a single line, per-line registration status by poll or by callback,
   and the line reset count.
-- **`DECT` handsets** — enable the cordless subsystem, open and close the registration window,
+- `DECT` handsets — enable the cordless subsystem, open and close the registration window,
   deregister a handset, read the base station's identity and versions, get and set its
   authentication `PIN`, and enumerate the registered handsets.
 - **Calls and call processing** — the per-call voice-quality records held against a line, the
   call-processing and line-card state of a line, the `DOCSIS` service flows in use with their `QoS`
   parameters, and discarding the records for a line.
-- **`DSX` and call-signalling logs** — read, enable, disable and clear the `DSX` and call-signalling
+- `DSX` **and call-signalling logs** — read, enable, disable and clear the `DSX` and call-signalling
   logs, and read the MTA event log in full.
 - **Battery** — whether a backup battery is fitted, its design and present capacity, remaining
   charge and run time, cycle rating, power source, condition, present activity, replacement verdict,
@@ -115,10 +116,10 @@ the superproject inventory establishes that component, and the inventory positiv
 owning service for MTA. The reference was therefore dropped rather than carried forward against the
 evidence, and the flowchart above stands alone. The file itself is left in place unchanged.
 
-*Derived from [`include/mta_hal.h`](../../include/mta_hal.h) — the declaration set at :648-2584 and
-the interface overview at :22 — from the delivered library named under `Build Requirements`, and
-from the RDK-B HAL superproject inventory that carries this repository as a submodule, whose MTA
-entry (its `README.md`:50) states the subject matter the header corroborates and whose
+*Derived from `include/mta_hal.h` — the declaration set at :648-2584 and the interface overview at
+:22 — from the delivered library named under `Build Requirements`, and from the RDK-B HAL
+superproject inventory that carries this repository as a submodule, whose MTA entry (at line 50 of
+the superproject README) states the subject matter the header corroborates and whose
 service-dependency table (:100) records no service to stop for MTA. The architecture claim is the
 flowchart's alone; the superproject is context, and where it and the header could disagree the
 header governs.*
@@ -129,7 +130,7 @@ Two parts of this interface are optional in the sense that a deployment may not 
 behind them. Everything else is not optional.
 
 - **The backup battery, and the twelve calls that read it.** `mta_hal_BatteryGetInstalled`
-  ([`include/mta_hal.h`](../../include/mta_hal.h):1666) exists precisely so that a caller can
+  (`include/mta_hal.h`:1666) exists precisely so that a caller can
   establish whether a battery is fitted before interpreting anything else the battery calls report.
   The header states that the battery calls do **not** distinguish an absent battery from any other
   failure, so `mta_hal_BatteryGetInstalled` is the presence test and a failed capacity or status
@@ -143,7 +144,7 @@ No other part of the interface is conditional: this repository declares no build
 that removes a declaration, no optional external daemon and no substitutable library. See `Platform
 or Product Customization`.
 
-*Derived from [`include/mta_hal.h`](../../include/mta_hal.h):176, :585-590, :923, :956 and :1666.*
+*Derived from `include/mta_hal.h`:176, :585-590, :923, :956 and :1666.*
 
 ## Component Runtime Execution Requirements
 
@@ -187,10 +188,10 @@ Third party vendors will implement appropriately to meet operational requirement
 is expected to block if the hardware is not ready** — which, at bootup, is exactly when a caller
 invokes `mta_hal_InitDB()`; see `Blocking calls`.
 
-*Derived from [`include/mta_hal.h`](../../include/mta_hal.h):566-572 (the lifecycle statement),
+<em>Derived from `include/mta_hal.h`:566-572 (the lifecycle statement),
 :608-636 (`mta_hal_InitDB` and its pre- and post-conditions), :2434-2477
 (`mta_hal_start_provisioning`), :2567-2571 (the callback's registration ordering), and the
-initialization statement carried by the predecessor of this page.*
+initialization statement carried by the predecessor of this page.</em>
 
 ### Threading Model
 
@@ -215,7 +216,7 @@ Notification Model`.
 
 *Derived from the threading policy stated by the predecessor of this page, retained here as this
 repository's own statement, and corroborated by
-[`include/mta_hal.h`](../../include/mta_hal.h):595-598 and :2530-2536.*
+`include/mta_hal.h`:595-598 and :2530-2536.*
 
 ### Process Model
 
@@ -231,7 +232,7 @@ than one RDK-B component links this library, they need a serialisation arrangeme
 this interface does not provide.
 
 *Derived from the process model stated by the predecessor of this page, and from
-[`include/mta_hal.h`](../../include/mta_hal.h):597-598 and the per-function thread-safety warnings,
+`include/mta_hal.h`:597-598 and the per-function thread-safety warnings,
 for example :892-893.*
 
 ### Memory Model
@@ -242,7 +243,7 @@ operational requirements, and are responsible for de-allocating it internally.
 
 Per-function ownership is stated on each declaration rather than repeated here, because it is a
 per-call property that this interface does not settle globally: see the `@param` and `@warning` text
-in [`include/mta_hal.h`](../../include/mta_hal.h).
+in `include/mta_hal.h`.
 
 #### Caller Responsibilities
 
@@ -278,7 +279,7 @@ in [`include/mta_hal.h`](../../include/mta_hal.h).
   buffer be reused, released or cleared. Two cases make the rule concrete. The `PIN` passed to
   `mta_hal_SetDectPIN()` is the case where the interface says nothing at all about retention, and
   the declaration now states the consequence rather than inferring a release
-  ([`include/mta_hal.h`](../../include/mta_hal.h):1152-1177). The structure passed to
+  (`include/mta_hal.h`:1152-1177). The structure passed to
   `mta_hal_start_provisioning()` is the case where the interface addresses the question and still
   does not settle it (:2443-2449), so the structure is kept valid at least until provisioning is
   confirmed to have progressed. Where the buffer holds a protected value, the clearing obligation
@@ -301,7 +302,7 @@ in [`include/mta_hal.h`](../../include/mta_hal.h).
 - Do not retain a caller-supplied pointer after the call returns. This is an obligation on the
   implementation and not a property the interface establishes or reports: no declaration states a
   lifetime for an input argument, and the two that address the question —
-  `mta_hal_start_provisioning()` at [`include/mta_hal.h`](../../include/mta_hal.h):2489-2494 and
+  `mta_hal_start_provisioning()` at `include/mta_hal.h`:2489-2494 and
   `mta_hal_SetDectPIN()` at :1152-1177 — each record that retention beyond the call is **not**
   stated either way. A caller therefore follows the conservative guidance under `Caller
   Responsibilities` rather than relying on this rule, and an integrator that needs the lifetime
@@ -309,17 +310,17 @@ in [`include/mta_hal.h`](../../include/mta_hal.h).
 - Zero-terminate every string written into a caller-supplied text buffer, so that a caller can
   determine its length safely.
 - Adhere to these rules unless a specific declaration in
-  [`include/mta_hal.h`](../../include/mta_hal.h) states otherwise for its own arguments.
+  `include/mta_hal.h` states otherwise for its own arguments.
 
 **No memory footprint limit is specified for this interface.** Neither this repository nor the
 header states a maximum resident size, a heap budget or an allocation count for an implementation. A
 caller cannot rely on a bound, and an implementer is not held to one by this specification. See
 `Memory and performance requirements`.
 
-*Derived from the memory model stated by the predecessor of this page, and from
-[`include/mta_hal.h`](../../include/mta_hal.h):600-605 (the interface-wide statement), :767-771
+<em>Derived from the memory model stated by the predecessor of this page, and from
+`include/mta_hal.h`:600-605 (the interface-wide statement), :767-771
 (`pCalls`), :885-887 (`ppCfg`), :1606-1612 (`pDescription`), :484-1171 (the `pPINString` lifetime
-statement) and :2443-2449 (the provisioning parameters).*
+statement) and :2443-2449 (the provisioning parameters).</em>
 
 ### Power Management Requirements
 
@@ -333,7 +334,7 @@ takes part in a power transition. There is no call in this interface that puts t
 low-power state or brings it out of one.
 
 *Derived from the power management statement carried by the predecessor of this page, and from
-[`include/mta_hal.h`](../../include/mta_hal.h):1636-2053 (the battery calls, all of which report and
+`include/mta_hal.h`:1636-2053 (the battery calls, all of which report and
 none of which sets a power state).*
 
 ### Asynchronous Notification Model
@@ -387,7 +388,7 @@ all, polls `mta_hal_getLineRegisterStatus()` instead: it reports the same enumer
 in one call. The push and poll paths deliver the same information, and a caller using both must
 synchronise its own state against both.
 
-*Derived from [`include/mta_hal.h`](../../include/mta_hal.h):2540-2588 (the callback typedef, its
+*Derived from `include/mta_hal.h`:2540-2588 (the callback typedef, its
 parameters, return values and the unspecified properties) and :2549-2584 (the registration
 function). The previous statement on this page is superseded because the declaration outranks it.*
 
@@ -411,10 +412,10 @@ A caller that needs a bound must impose it itself, and an implementer is not hel
 this specification. Two consequences are worth stating plainly, because a caller has to design
 around them:
 
-- **`mta_hal_TriggerDiagnostics()` starts the `GR909` loop tests but does not wait for them.** The
+- `mta_hal_TriggerDiagnostics()` **starts the `GR909` loop tests but does not wait for them.** The
   results appear later in the line-table entry read by `mta_hal_LineTableGetEntry()`, and this
   interface states no time by which they will be there, so a caller polls rather than waits.
-- **`mta_hal_devResetNow()` restarts the MTA.** This interface does not state whether the call
+- `mta_hal_devResetNow()` **restarts the MTA.** This interface does not state whether the call
   returns before or after the reset takes effect, nor how long the MTA is unavailable, so a caller
   should expect subsequent calls to fail until the MTA is ready and should re-establish state by
   polling rather than assume continuity.
@@ -422,9 +423,9 @@ around them:
 The one thing that must **not** block is the notification callback; see `Asynchronous Notification
 Model`.
 
-*Derived from the blocking-call policy stated by the predecessor of this page, and from
-[`include/mta_hal.h`](../../include/mta_hal.h):594-597 (the interface-wide synchronous and may-block
-statement), :810-847 (`mta_hal_TriggerDiagnostics`) and :2262-2291 (`mta_hal_devResetNow`).*
+<em>Derived from the blocking-call policy stated by the predecessor of this page, and from
+`include/mta_hal.h`:594-597 (the interface-wide synchronous and may-block
+statement), :810-847 (`mta_hal_TriggerDiagnostics`) and :2262-2291 (`mta_hal_devResetNow`).</em>
 
 ### Internal Error Handling
 
@@ -461,10 +462,10 @@ not be read" arrive identically. A caller that needs to know whether a battery i
 `mta_hal_BatteryGetInstalled()` and treats that answer — not a failed capacity or status read — as
 the presence test.
 
-*Derived from the error-handling policy stated by the predecessor of this page, and from
-[`include/mta_hal.h`](../../include/mta_hal.h):117-128 (the two codes), :574-581 (the interface-wide
+<em>Derived from the error-handling policy stated by the predecessor of this page, and from
+`include/mta_hal.h`:117-128 (the two codes), :574-581 (the interface-wide
 statement, its two exceptions and the battery consequence), :719-745
-(`mta_hal_LineTableGetNumberOfEntries`) and :2584 (the registration function).*
+(`mta_hal_LineTableGetNumberOfEntries`) and :2584 (the registration function).</em>
 
 ### Persistence Model
 
@@ -485,7 +486,7 @@ The `DECT` registration window opened by `mta_hal_DectSetRegistrationMode()` is 
 a caller should not rely on either.
 
 *Derived from the persistence statement carried by the predecessor of this page, and from
-[`include/mta_hal.h`](../../include/mta_hal.h):947-949, :970-973, :1000-1002, :1188-1190, :1443-1445,
+`include/mta_hal.h`:947-949, :970-973, :1000-1002, :1188-1190, :1443-1445,
 :1543-1544 and :2090-2092.*
 
 ## Non functional requirements
@@ -545,7 +546,7 @@ nothing enforces them mechanically.
   its mask, its gateway, its resolvers and the servers it was configured from — is one protected
   group, because any of them published beside the others discloses the subscriber's network
   position as surely as the address alone does. Line numbers are into
-  [`include/mta_hal.h`](../../include/mta_hal.h).
+  `include/mta_hal.h`.
 
   | Protected values | Declared at | Reported or accepted by | Why it is protected |
   | --- | --- | --- | --- |
@@ -661,8 +662,8 @@ nothing enforces them mechanically.
   `MTAMGMT_MTA_MTALOG_FULL` (:469-476) constrains what its free-text member may hold, so a caller
   cannot assume a record is clean and must treat vendor log text as capable of carrying any of them.
 
-*Derived from the logging policy stated by the predecessor of this page, and from
-[`include/mta_hal.h`](../../include/mta_hal.h):574-582 (the single failure code that makes this log
+<em>Derived from the logging policy stated by the predecessor of this page, and from
+`include/mta_hal.h`:574-582 (the single failure code that makes this log
 the only diagnostic channel) and :1361-1617 (the interface's own log readers). The inventory above
 is derived member by member from the structure definitions themselves — `MTAMGMT_MTA_DECT`
 :189-197, `MTAMGMT_MTA_HANDSETS_INFO` :209-218, `MTAMGMT_MTA_DHCP_INFO` :229-249,
@@ -678,7 +679,7 @@ declarations carry the requirement in full on their own `@warning`: :807
 `mta_hal_start_provisioning` (:2477) — so for the handset numbers and names, the call records read
 directly, the `DHCP` members, the battery serial number and the provisioning option values this
 topic is the only place the rule is stated, and a reader of those six declarations alone will not
-find it there.*
+find it there.</em>
 
 ### Memory and performance requirements
 
@@ -705,9 +706,9 @@ array-returning reads are bounded by what the implementation reports rather than
 line table by `mta_hal_LineTableGetNumberOfEntries()`, the handset list by `DECT_MAX_HANDSETS` (5),
 and the call, service-flow and log arrays by the `Count` each call writes.
 
-*Derived from the memory and performance policy stated by the predecessor of this page, and from
-[`include/mta_hal.h`](../../include/mta_hal.h):143 (`MTA_HAL_SHORT_VALUE_LEN`), :176
-(`DECT_MAX_HANDSETS`), :321-389 (`MTAMGMT_MTA_CALLS`) and :403-420 (`MTAMGMT_MTA_LINETABLE_INFO`).*
+<em>Derived from the memory and performance policy stated by the predecessor of this page, and from
+`include/mta_hal.h`:143 (`MTA_HAL_SHORT_VALUE_LEN`), :176
+(`DECT_MAX_HANDSETS`), :321-389 (`MTAMGMT_MTA_CALLS`) and :403-420 (`MTAMGMT_MTA_LINETABLE_INFO`).</em>
 
 ### Quality Control
 
@@ -720,11 +721,12 @@ error handling all have to be handled deliberately rather than left to chance.
 from. **Any change to one of those files obliges a review of the topics that cite it.** In
 particular:
 
-- A change to [`include/mta_hal.h`](../../include/mta_hal.h) obliges a review of `Data Structures
+- A change to `include/mta_hal.h` obliges a review of `Data Structures
   and Defines`, `API Surface`, `Sequence Diagram` and `State Diagram`, because a renamed, added or
   removed declaration falsifies them immediately, and of any runtime topic whose statement cites the
   header.
-- A change to `CHANGELOG.md` or to the repository's tags obliges a review of `Version History`.
+- A change to the repository's changelog or to its tags obliges a review of
+  `Version History`.
 - A change to `docs/generate_docs.sh` — in particular to its generator pin or its `PROJECT_NAME` —
   obliges a review of `Variability Management` and `Platform or Product Customization`, which record
   what that script asks the documentation build to do.
@@ -732,20 +734,21 @@ particular:
   unreferenced raster the repository still carries.
 
 This repository declares no `CODEOWNERS` — `.github/` holds only the CLA workflow — so the addressee
-of that obligation is the maintainer group `CONTRIBUTING.md` directs contributions to: the
-`rdkcentral/rdkb-halif-mta` review team, reached by raising an issue and then opening a pull request
-for team review.
+of that obligation is the maintainer group the repository's contribution guide directs
+contributions to: the `rdkcentral/rdkb-halif-mta` review team, reached by raising an issue and then
+opening a pull request for team review.
 
 *Derived from the quality-control policy stated by the predecessor of this page, from
-`CONTRIBUTING.md`:5-11, and from the absence of a `CODEOWNERS` file under `.github/`.*
+the contribution guide, lines 5-11, and from the absence of a `CODEOWNERS` file under
+`.github/`.*
 
 ### Licensing
 
 MTA HAL implementations are expected to be released under the Apache License 2.0.
 
 The interface definition in this repository is itself licensed under the Apache License 2.0; the
-full text is carried in [`LICENSE.md`](LICENSE.md) and the attribution notice in
-[`NOTICE.md`](NOTICE.md).
+full text is carried in [LICENSE.md](LICENSE.md) and the attribution notice in
+[NOTICE.md](NOTICE.md).
 
 *Derived from the licensing statement carried by the predecessor of this page and from the
 repository's own licence files.*
@@ -766,7 +769,7 @@ builds the separate unit-test suite — it clones a `halif-test` companion repos
 that suite's own build — so it is not a way to build the interface or an implementation of it.
 
 *Derived from the build statement carried by the predecessor of this page, from
-[`include/mta_hal.h`](../../include/mta_hal.h):29-30 (the two system includes), and from
+`include/mta_hal.h`:29-30 (the two system includes), and from
 `build_ut.sh`:22-33, which clones and delegates to the unit-test suite.*
 
 ### Variability Management
@@ -780,7 +783,7 @@ code complies with a specific version of the interface.
 
 **The header defines no compile-time variability flag.** There is no feature macro that adds,
 removes or alters a declaration or a type: every one of the 49 declarations in
-[`include/mta_hal.h`](../../include/mta_hal.h) is unconditional, and the header's entire
+`include/mta_hal.h` is unconditional, and the header's entire
 conditional surface is its `__MTA_HAL_H__` include guard together with **fourteen
 `#ifndef`-guarded compatibility definitions**, each of which exists so the header can be included
 where the platform has already defined the name. Twelve are base types and status codes shared with
@@ -813,7 +816,7 @@ fail at link time, not with a graceful capability check, because this interface 
 enquiry.
 
 *Derived from the versioning statement carried by the predecessor of this page, and from
-[`include/mta_hal.h`](../../include/mta_hal.h), in which a search for a version, major, minor or
+`include/mta_hal.h`, in which a search for a version, major, minor or
 patch macro returns nothing, and in which the fifteen `#ifndef` directives are the `__MTA_HAL_H__`
 include guard plus the fourteen compatibility definitions listed above, each verified against the
 line its `#define` occupies.*
@@ -844,7 +847,7 @@ Product-level variability that does exist is a matter of hardware presence rathe
 whether a backup battery is fitted and whether the `DECT` subsystem is enabled — and it is
 discovered at run time through the calls named under `Optional Components`.
 
-*Derived from [`include/mta_hal.h`](../../include/mta_hal.h):26-27 and :2646 (the include guard) and
+*Derived from `include/mta_hal.h`:26-27 and :2646 (the include guard) and
 :69-164 (the fourteen compatibility `#ifndef` blocks and the statement at :58-64 that a caller's own
 definition wins), and from `docs/generate_docs.sh`:30, which passes only `PROJECT_NAME` and
 `PROJECT_VERSION`.*
@@ -852,7 +855,7 @@ definition wins), and from `docs/generate_docs.sh`:30, which passes only `PROJEC
 ## Interface API Documentation
 
 All HAL function prototypes and datatype definitions are available in the
-[`mta_hal.h`](../../include/mta_hal.h) file. Each declaration carries a Doxygen block giving its
+`mta_hal.h` file. Each declaration carries a Doxygen block giving its
 per-parameter direction, valid range, buffer ownership, pre-conditions, post-conditions and the
 return values it can produce; **that block is the authority for the per-call detail this page
 indexes rather than repeats.**
@@ -904,9 +907,9 @@ block:
 
 #### Method Sequencing
 
-- **`mta_hal_InitDB()` comes first, and it is the pre-condition of every other call.** Every
+- `mta_hal_InitDB()` **comes first, and it is the pre-condition of every other call.** Every
   declaration in the header states that pre-condition; `mta_hal_InitDB()` itself has none.
-- **`mta_hal_start_provisioning()` comes second**, before a caller relies on any provisioning,
+- `mta_hal_start_provisioning()` **comes second**, before a caller relies on any provisioning,
   `DHCP`, configuration-file, line or call reads. Both are made once during bootup.
 - **Progress is polled, not awaited.** After provisioning has been started,
   `mta_hal_getMtaProvisioningStatus()`, `mta_hal_getConfigFileStatus()`, `mta_hal_getDhcpStatus()`
@@ -941,10 +944,10 @@ plausible one:
   is what tells a caller whether it has been. The header records one concrete consequence: a
   provisioned MTA yields a valid MTA IP address when `Device.DeviceInfo.X_COMCAST-COM_MTA_IP` is
   queried, and a non-provisioned one yields `0.0.0.0`.
-- **`mta_hal_devResetNow()` invalidates everything a caller had established.** Calls in progress are
+- `mta_hal_devResetNow()` **invalidates everything a caller had established.** Calls in progress are
   lost, and the interface does not state how long the MTA is unavailable, so a caller re-establishes
   state by polling rather than assuming continuity.
-- **`DECT` reads depend on the subsystem being enabled** — `mta_hal_DectGetEnable()` reports whether
+- `DECT` **reads depend on the subsystem being enabled** — `mta_hal_DectGetEnable()` reports whether
   it is — and the handset population depends on what has been registered through the window opened
   by `mta_hal_DectSetRegistrationMode()`.
 - **Everything else is unspecified, and a caller must not infer it.** This interface does not state
@@ -952,13 +955,13 @@ plausible one:
   does not state whether a failed call leaves any state changed. Where a caller needs to know, the
   only supported technique is to read the relevant status or count again.
 
-*Derived from [`include/mta_hal.h`](../../include/mta_hal.h):560-597 (the interface-wide
+*Derived from `include/mta_hal.h`:560-597 (the interface-wide
 properties), :535-545 (the provisioning status consequence), :608-636, :719-807, :2262-2291 and
 :2434-2477.*
 
 ### Data Structures and Defines
 
-Every type below is declared in [`mta_hal.h`](../../include/mta_hal.h) under the `MTA_HAL_TYPES`
+Every type below is declared in `mta_hal.h` under the `MTA_HAL_TYPES`
 Doxygen group — opened at :50 and :2404 and :2535, closed at :547 and :2425 and :2540 — and the
 member-level meaning of each field is carried by the `/**< */` comment on the field itself. The
 sibling group `MTA_HAL_APIS` holds the declarations. Line numbers are given so that a caller can go
@@ -1023,7 +1026,7 @@ The header additionally defines the scalar aliases `ULONG`, `CHAR`, `UCHAR`, `BO
 must be compared against `TRUE` or `FALSE` rather than assumed to be a single bit. See `Platform or
 Product Customization` for what a caller takes on by pre-defining any of these names.
 
-*Derived from [`include/mta_hal.h`](../../include/mta_hal.h):50-172, :196-495, :515-545, :2361-2422
+*Derived from `include/mta_hal.h`:50-172, :196-495, :515-545, :2361-2422
 and :2535-2584.*
 
 ### API Surface
@@ -1031,7 +1034,7 @@ and :2535-2584.*
 All **49** declared functions are listed below by exact identifier, grouped by functional area.
 Per-API detail — argument direction, valid ranges, array sizing, buffer ownership, pre-conditions
 and the full return-value list — is carried by the Doxygen block on each declaration in
-[`include/mta_hal.h`](../../include/mta_hal.h) under the `MTA_HAL_APIS` group, at the line given in
+[include/mta_hal.h](../../include/mta_hal.h) under the `MTA_HAL_APIS` group, at the line given in
 each row.
 
 This topic is the boundary named under `Description`: everything above it answers what this
@@ -1065,7 +1068,7 @@ count and `mta_hal_LineRegisterStatus_callback_register` returns `void`. The rem
 | `mta_hal_LineRegisterStatus_callback_register` | :2584 | Installs the caller's callback for line register status updates. Returns nothing. |
 | `mta_hal_Get_LineResetCount` | :2112 | Reports how many times the MTA's voice lines have been reset. |
 
-**`DECT` handsets** — 9 functions.
+`DECT` handsets — 9 functions.
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
@@ -1088,7 +1091,7 @@ count and `mta_hal_LineRegisterStatus_callback_register` returns `void`. The rem
 | `mta_hal_ClearCalls` | :2147 | Discards the voice-quality call records held for one line. |
 | `mta_hal_GetServiceFlow` | :891 | Reports every `DOCSIS` service flow the MTA is using, with its `QoS` parameters. |
 
-**`DSX` and call-signalling logs** — 8 functions.
+`DSX` **and call-signalling logs** — 8 functions.
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
@@ -1126,7 +1129,7 @@ count and `mta_hal_LineRegisterStatus_callback_register` returns `void`. The rem
 | `mta_hal_devResetNow` | :2291 | Resets the MTA device immediately. Service affecting, and it cannot be cancelled. |
 | `mta_hal_Get_MTAResetCount` | :2082 | Reports how many times the MTA has been reset. |
 
-*Derived from [`include/mta_hal.h`](../../include/mta_hal.h):648-2584, the complete declaration set,
+*Derived from [include/mta_hal.h](../../include/mta_hal.h):648-2584, the complete declaration set,
 extracted by comment- and preprocessor-stripped declaration matching and cross-checked against
 Universal Ctags. 8 + 5 + 9 + 4 + 8 + 12 + 3 = 49.*
 
@@ -1185,7 +1188,7 @@ MTA HAL->>Client Module: registered callback, status array and size
 Client Module->>MTA HAL: callback returns RETURN_OK
 ```
 
-*Derived from [`include/mta_hal.h`](../../include/mta_hal.h):648 and :2528 (the bootup pair),
+*Derived from `include/mta_hal.h`:648 and :2528 (the bootup pair),
 :745-807 (count then entry), :1425-1453 (write then read back), :2350 (the provisioning read) and
 :2489-2584 (the callback), and from the diagram carried by the predecessor of this page, whose three
 participants and bootup note are retained.*
@@ -1198,7 +1201,7 @@ edges the interface does not establish would assert an ordering a caller could r
 implementer is not held to. The header states the same thing directly — the values are readable
 status, not a state machine a caller may drive or predict.
 
-**`MTAMGMT_MTA_STATUS` — five values, four meanings.** This is the single most easily misread part
+`MTAMGMT_MTA_STATUS` — five values, four meanings. This is the single most easily misread part
 of the interface. One enumeration is reported by five different reads, and a value carries no
 meaning on its own: it is read against the call that produced it.
 
@@ -1217,13 +1220,13 @@ registered callback, which delivers the same per-line array asynchronously. So t
 answer four different questions: overall operational status, configuration-file status, `DHCP`
 status and per-line register status. A caller must keep the question with the answer.
 
-**`MTAMGMT_MTA_PROVISION_STATUS` — two values, with an observable consequence.** `MTA_PROVISIONED`
+`MTAMGMT_MTA_PROVISION_STATUS` — two values, with an observable consequence. `MTA_PROVISIONED`
 (0) and `MTA_NON_PROVISIONED` (1), reported only by `mta_hal_getMtaProvisioningStatus()`. The header
 records the consequence a caller can check independently: when the status is `MTA_PROVISIONED` a
 valid MTA IP address should be obtained when `Device.DeviceInfo.X_COMCAST-COM_MTA_IP` is queried,
 and when it is `MTA_NON_PROVISIONED` that address should be `0.0.0.0`.
 
-**`MTAMGMT_MTA_PROV_IP_MODE` — an input, not a state.** `MTA_IPV4` (0), `MTA_IPV6` (1) and
+`MTAMGMT_MTA_PROV_IP_MODE` — an input, not a state. `MTA_IPV4` (0), `MTA_IPV6` (1) and
 `MTA_DUAL_STACK` (2) are supplied by the caller in the provisioning parameters. No call in this
 interface reports the mode back, so a caller that needs to know which mode is in force remembers
 what it asked for.
@@ -1235,7 +1238,7 @@ a transition: `mta_hal_start_provisioning()` starts provisioning and `mta_hal_de
 restarts the device, but neither is documented as producing a particular sequence of status values.
 A caller reads the current value, and re-reads it; it must not predict the next one.
 
-*Derived from [`include/mta_hal.h`](../../include/mta_hal.h):508-532 (the enumeration, its five
+<em>Derived from `include/mta_hal.h`:508-532 (the enumeration, its five
 readers and the explicit note that transitions are not specified), :535-545
 (`MTAMGMT_MTA_PROVISION_STATUS` and the MTA IP consequence), :2382-2394 (`MTAMGMT_MTA_PROV_IP_MODE`)
-and :2150-2350 (the reads that report status).*
+and :2150-2350 (the reads that report status).</em>

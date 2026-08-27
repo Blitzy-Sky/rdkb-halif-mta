@@ -269,7 +269,7 @@ in [`include/mta_hal.h`](../../include/mta_hal.h).
   anything it needs to keep. Freeing memory the implementation owns and leaking memory it does not
   are both consequences of guessing, so the ownership rule has to be established with the
   implementation before it is relied on.
-- **Do not treat the return of a call as the moment an input buffer becomes yours again.** This
+- **The return of a call is not the moment an input buffer becomes the caller's again.** This
   interface states no lifetime for any input argument and no post-condition that releases the
   caller's storage, and that silence is **not** permission: a caller must not reuse, move, free or
   overwrite a buffer it handed in merely because the call has returned. It keeps each one stable —

@@ -1,1 +1,1 @@
-docs/pages/MTAhalSpec.md
+docs/pages/halSpec.md

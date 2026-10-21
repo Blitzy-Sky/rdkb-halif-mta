@@ -96,8 +96,7 @@ entry point:
 - `mta_hal_InitDB()` \- makes the shared MTA databases available locally. It is the pre-condition of
   every other call in the interface.
 - `mta_hal_start_provisioning()` \- starts IP provisioning for all voice lines in the requested
-  address mode, with the `DHCP` option 122 and option 2171 values to use. `RETURN_OK` means
-  provisioning has started, not that the lines are provisioned.
+  address mode, with the `DHCP` option 122 and option 2171 values to use.
 
 Provisioning progress is polled through `mta_hal_getMtaProvisioningStatus()`,
 `mta_hal_getConfigFileStatus()`, `mta_hal_getDhcpStatus()` and
@@ -201,9 +200,12 @@ synchronises its own state between them.
 
 ### Blocking calls
 
-**Synchronous completion.** Every function returns only once its operation has completed or failed,
-within a time commensurate with the complexity of the operation and with any relevant MTA
-specification.
+**Synchronous return.** Every function is synchronous and returns within a time commensurate with
+the complexity of the operation and with any relevant MTA specification. A successful return from
+`mta_hal_start_provisioning()`, `mta_hal_TriggerDiagnostics()` or `mta_hal_devResetNow()` means
+only that the action was accepted or started, not that it has completed. The caller polls for the
+outcome with `mta_hal_getMtaProvisioningStatus()`, `mta_hal_LineTableGetEntry()` (the line's
+`GR909` results) and `mta_hal_getMtaOperationalStatus()` respectively.
 
 **Hardware readiness.** Any call may block while the MTA hardware is not ready. This applies at
 bootup, when a caller invokes `mta_hal_InitDB()` and `mta_hal_start_provisioning()`.
@@ -226,7 +228,7 @@ action. Every function returns one of the two codes below, except
 
 | Code | Value | Meaning | Caller action |
 | --- | --- | --- | --- |
-| `RETURN_OK` | 0 | The operation completed and every documented out-parameter has been written. | Use the out-parameters. |
+| `RETURN_OK` | 0 | The call succeeded and every documented out-parameter has been written. | Use the out-parameters. |
 | `RETURN_ERR` | -1 | The operation failed. The code identifies no cause, and no out-parameter is valid. | Discard the out-parameters, re-read the relevant status or count before retrying, and consult the vendor log described under `Logging and debugging requirements` for the cause. |
 
 ### Persistence Model
@@ -347,43 +349,39 @@ To use the MTA HAL from a component or process:
 ### Theory of operation and key concepts
 
 Every function is a synchronous getter, setter or command addressed either to the MTA as a whole or
-to one voice line identified by index. Results are written through caller-supplied pointers and
-status is reported by return value. There is no session, handle or context object:
-`mta_hal_InitDB()` makes the shared databases reachable and nothing is handed back to represent
-that.
+to one voice line. Results are written through caller-supplied pointers and status is reported by
+return value.
 
-- **Line index addressing.** Valid line indices run from 0 to one less than the count
-  `mta_hal_LineTableGetNumberOfEntries()` reports.
+- **Line addressing.** `mta_hal_LineTableGetEntry()` and `mta_hal_TriggerDiagnostics()` take a
+  zero-based index below the count `mta_hal_LineTableGetNumberOfEntries()` reports. The other
+  per-line calls take an identifier from the line-table entry: `mta_hal_GetCALLP()` its
+  `LineNumber`, and `mta_hal_GetCalls()` and `mta_hal_ClearCalls()` its `InstanceNumber`.
 - **Point-in-time reads.** Reads report current values. Line register status is the only value also
   pushed to the caller; see `Asynchronous Notification Model`.
-- **Commands report acceptance.** `RETURN_OK` from `mta_hal_start_provisioning()`,
-  `mta_hal_TriggerDiagnostics()` or `mta_hal_devResetNow()` means the action has been accepted or
-  started; the outcome is read afterwards through a separate call.
+- **Commands report acceptance.** `mta_hal_start_provisioning()`, `mta_hal_TriggerDiagnostics()`
+  and `mta_hal_devResetNow()` report acceptance, not completion; see `Blocking calls`.
 
 #### Object Lifecycles
 
-- **Creation:** the MTA HAL creates no caller-visible object. The caller allocates the structures
-  listed under `Data Structures and Defines` and passes their addresses through the `PMTAMGMT_*`
-  pointer aliases the declarations use.
-- **Usage:** the caller populates input structures — chiefly `MTAMGMT_PROVISIONING_PARAMS` — and
-  reads output structures only after the call returned `RETURN_OK`.
-- **Destruction:** the caller deallocates what it allocated. Memory the implementation returns is
-  handled as described under `Memory Model`.
+There is no session, handle or context object: `mta_hal_InitDB()` makes the shared databases
+reachable for the life of the process, as `Initialization and Startup` describes, and hands nothing
+back to represent that. Structures and buffers a caller passes or receives follow the ownership
+rules under `Memory Model`.
 
 #### Method Sequencing
 
-- **Initialize first.** `mta_hal_InitDB()`, then `mta_hal_start_provisioning()`, once during bootup,
-  as described under `Initialization and Startup`.
-- **Poll for progress.** Provisioning, configuration-file, `DHCP` and operational status are polled
-  before a caller relies on line, call or `DHCP` reads.
-- **Count before entry.** The count from `mta_hal_LineTableGetNumberOfEntries()` bounds the index
-  passed to `mta_hal_LineTableGetEntry()` and to the per-line calls `mta_hal_GetCALLP()`,
-  `mta_hal_GetCalls()`, `mta_hal_ClearCalls()` and `mta_hal_TriggerDiagnostics()`. The count can
-  change, so a caller re-reads it before relying on an earlier index.
+The bootup order, the polling of provisioning progress and the timing of callback registration
+follow `Initialization and Startup`. After bootup, these rules order the remaining calls:
+
+- **Status before reads.** Provisioning progress is polled before a caller relies on line, call or
+  `DHCP` reads.
+- **Count before entry.** A caller reads the count with `mta_hal_LineTableGetNumberOfEntries()`
+  before passing a line index, and the entry with `mta_hal_LineTableGetEntry()` before a per-line
+  call that takes an identifier from it, as `Line addressing` describes. The count can change, so a
+  caller re-reads it before relying on an earlier index.
 - **Read back after write.** Each setter has a matching getter, for example
   `mta_hal_DectSetEnable()` and `mta_hal_DectGetEnable()`; reading the value back confirms that a
   write took effect.
-- **Register the callback early**, before the line registration changes it needs can occur.
 
 #### State-Dependent Behavior
 
@@ -450,7 +448,7 @@ with an extra `MTA_`, and that is the type `mta_hal_start_provisioning()` takes.
 | `MTA_LINENUMBER` | 8 | The published line count, used to size the array passed to `mta_hal_getLineRegisterStatus()`. The authoritative line-table count is what `mta_hal_LineTableGetNumberOfEntries()` returns. |
 | `MTA_DHCPOPTION122SUBOPTION1_MAX` / `MTA_DHCPOPTION122SUBOPTION2_MAX` | 4 / 4 | Lengths of the two `DHCP` option 122 sub-option values in `MTAMGMT_PROVISIONING_PARAMS`; each member is one byte longer for the terminator. |
 | `MTA_DHCPOPTION122CCCV6DSSID1_MAX` / `MTA_DHCPOPTION122CCCV6DSSID2_MAX` | 32 / 32 | Lengths of the two option 2171 `CCC` `DSS` identifiers, whose actual lengths travel in the matching `Len` members. |
-| `ANSC_IPV4_ADDRESS` | union | Two views of one IPv4 address: `Dot`, four octets in network byte order, and `Value`, a `uint32_t` over the same storage, so the integer view is not in host byte order. Every IPv4-valued member uses it. |
+| `ANSC_IPV4_ADDRESS` | union | Two views of one IPv4 address: `Dot`, four octets in network byte order, and `Value`, a `uint32_t` over the same storage. Writing one view changes the other, and a caller must not assume the integer view is in host byte order. Every IPv4-valued member uses it. |
 
 The header also defines the scalar aliases `ULONG`, `CHAR`, `UCHAR`, `BOOLEAN` and `INT`. `BOOLEAN`
 is an `unsigned char`, so a `BOOLEAN` result is compared against `TRUE` or `FALSE`.

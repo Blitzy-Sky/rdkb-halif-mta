@@ -24,7 +24,6 @@
 - `PIN` \- Personal Identification Number
 - `QoS` \- Quality of Service
 - `RDK-B` \- Reference Design Kit for Broadband Devices
-- `SLA` \- Service Level Agreement
 - `TN` \- Telephone Number
 
 ## Description
@@ -43,31 +42,31 @@ of a broadband device that delivers home phone service over `DOCSIS` alongside h
 It abstracts the underlying MTA hardware and the vendor voice software behind one standard set of
 functions.
 
-This repository carries the **interface definition only**: `mta_hal.h` declares 49 functions, the
+This repository carries the interface definition only: `mta_hal.h` declares 49 functions, the
 data types they exchange and the status values they report. Each vendor or `OEM` ships its own
 implementation behind that contract as a shared library.
 
-**Caller.** No single dedicated middleware service owns this interface. The caller, shown as
+**Caller:** No single dedicated middleware service owns this interface. The caller, shown as
 RDK-B Middleware in the diagrams, is the RDK-B middleware component that links `libhal_mta.so`; it
 is responsible for the initialization order described under `Initialization and Startup`.
 
 The interface covers seven functional areas:
 
-- **Initialization and provisioning** — make the shared MTA databases available locally, start IP
+- **Initialization and provisioning:** make the shared MTA databases available locally, start IP
   provisioning in `IPv4`, `IPv6` or dual-stack mode, and read provisioning, configuration-file and
   `DHCP` progress.
-- **Lines, telephone numbers and registration status** — the line table, per-line state and
+- **Lines, telephone numbers and registration status:** the line table, per-line state and
   loop-test results, per-line registration status by poll or callback, and the line reset count.
-- **Cordless `DECT` handsets** — enable the cordless subsystem, control the registration window, deregister
+- **Cordless `DECT` handsets:** enable the cordless subsystem, control the registration window, deregister
   a handset, read the base station's identity, get and set its authentication `PIN`, and list the
   registered handsets.
-- **Calls and call processing** — per-call voice-quality records, call-processing state, and the
+- **Calls and call processing:** per-call voice-quality records, call-processing state, and the
   `DOCSIS` service flows in use with their `QoS` parameters.
-- **Call-signalling and `DSX` logs** — read, enable, disable and clear the `DSX` and call-signalling
+- **Call-signalling and `DSX` logs:** read, enable, disable and clear the `DSX` and call-signalling
   logs, and read the MTA event log.
-- **Battery** — presence, capacity, charge, run time, power source, condition, identity and
+- **Battery:** presence, capacity, charge, run time, power source, condition, identity and
   power-saving mode of the backup battery.
-- **Diagnostics and device maintenance** — start the `GR909` loop tests on a line, reset the device,
+- **Diagnostics and device maintenance:** start the `GR909` loop tests on a line, reset the device,
   and read the MTA reset count.
 
 ## Optional Components
@@ -75,10 +74,10 @@ The interface covers seven functional areas:
 Two parts of this interface depend on hardware a deployment may not have. All other parts are
 mandatory.
 
-- **The backup battery and its twelve calls.** The battery calls do not distinguish an absent
+- **The backup battery and its twelve calls:** The battery calls do not distinguish an absent
   battery from any other failure, so a caller calls `mta_hal_BatteryGetInstalled` first and treats
   its answer, not a failed capacity or status read, as the presence test.
-- **The `DECT` cordless subsystem and its nine calls.** It is switched at run time through
+- **The `DECT` cordless subsystem and its nine calls:** It is switched at run time through
   `mta_hal_DectGetEnable` and `mta_hal_DectSetEnable`; a deployment with the subsystem disabled or
   absent uses none of the other `DECT` calls. `DECT_MAX_HANDSETS` limits the handset population
   to 5.
@@ -111,7 +110,7 @@ behaviour is described under `Blocking calls`.
 
 ### Threading Model
 
-**The interface is not thread-safe.** Any module invoking an MTA HAL function serialises its calls
+**The interface is not thread-safe:** Any module invoking an MTA HAL function serialises its calls
 and completes `mta_hal_InitDB()` before issuing any other call from any thread. A caller must not
 carry an assumption of thread safety over from another RDK-B HAL.
 
@@ -139,14 +138,14 @@ on each declaration in `mta_hal.h`.
 
 #### Caller Responsibilities
 
-- **Allocate before the call.** Allocate every output scalar, buffer and structure before the call
+- **Allocate before the call:** Allocate every output scalar, buffer and structure before the call
   and pass a non-NULL pointer.
-- **Respect buffer bounds.** Size text buffers to the bounds the interface declares, and pass the
+- **Respect buffer bounds:** Size text buffers to the bounds the interface declares, and pass the
   buffer length where the call takes one.
-- **Do not free implementation memory.** Do not free or keep the arrays returned through
+- **Do not free implementation memory:** Do not free or keep the arrays returned through
   pointer-to-pointer out-parameters, or the memory reached through the `pCalls` and `pDescription`
   members; copy what is needed before the next MTA HAL call.
-- **Keep handed-in buffers stable.** Do not free, reuse or overwrite a buffer passed to the
+- **Keep handed-in buffers stable:** Do not free, reuse or overwrite a buffer passed to the
   interface until the vendor implementation confirms it does not retain the pointer. Keep the
   structure passed to `mta_hal_start_provisioning()` valid at least until provisioning has
   progressed.
@@ -168,15 +167,15 @@ battery; no call in this interface changes a device power state.
 
 ### Asynchronous Notification Model
 
-**This interface has exactly one asynchronous notification: a line register status update, delivered
-through a caller-registered callback.** Everything else in the interface is synchronous.
+**This interface has exactly one asynchronous notification, a line register status update delivered
+through a caller-registered callback:** Everything else in the interface is synchronous.
 
-**Registration.** A caller installs the callback with
+**Registration:** A caller installs the callback with
 `mta_hal_LineRegisterStatus_callback_register()` after `mta_hal_InitDB()` has succeeded. The call
 returns `void`, so the first invocation of the callback is the only confirmation of registration.
 There is no de-registration call; a caller registers exactly once with a valid function.
 
-**Callback signature.** The caller implements `mta_hal_getLineRegisterStatus_callback`:
+**Callback signature:** The caller implements `mta_hal_getLineRegisterStatus_callback`:
 `INT (*)(MTAMGMT_MTA_STATUS *output_status_array, int array_size)`.
 
 - `output_status_array` \- the register status of each line as `MTAMGMT_MTA_STATUS` values,
@@ -186,7 +185,7 @@ There is no de-registration call; a caller registers exactly once with a valid f
 - The callback returns `RETURN_OK` when it has handled the status and `RETURN_ERR` when it has not;
   it does not rely on `RETURN_ERR` to trigger a redelivery.
 
-**Callback obligations.**
+**Callback obligations:**
 
 - Copy any status value needed after returning, and do not release the array.
 - Do not call MTA HAL functions from the callback: the interface is not thread safe.
@@ -199,22 +198,22 @@ synchronises its own state between them.
 
 ### Blocking calls
 
-**Synchronous return.** Every function is synchronous and returns within a time commensurate with
+**Synchronous return:** Every function is synchronous and returns within a time commensurate with
 the complexity of the operation and with any relevant MTA specification. A successful return from
 `mta_hal_start_provisioning()`, `mta_hal_TriggerDiagnostics()` or `mta_hal_devResetNow()` means
 only that the action was accepted or started, not that it has completed. The caller polls for the
 outcome with `mta_hal_getMtaProvisioningStatus()`, `mta_hal_LineTableGetEntry()` (the line's
 `GR909` results) and `mta_hal_getMtaOperationalStatus()` respectively.
 
-**Hardware readiness.** Any call may block while the MTA hardware is not ready. This applies at
+**Hardware readiness:** Any call may block while the MTA hardware is not ready. This applies at
 bootup, when a caller invokes `mta_hal_InitDB()` and `mta_hal_start_provisioning()`.
 
-**Timeout handling.** Any procedure that risks failure because a connected device is unresponsive
+**Timeout Handling:** Any procedure that risks failure because a connected device is unresponsive
 adheres to a timeout based on the standard specification for the operation or on that function's
 documentation. `mta_hal_TriggerDiagnostics()` drives a physical line test and may block for as long
 as the vendor's diagnostic takes.
 
-**Non-blocking callback.** The line register status callback returns promptly and never blocks the
+**Non-blocking callback:** The line register status callback returns promptly and never blocks the
 context that invoked it.
 
 ### Internal Error Handling
@@ -232,7 +231,7 @@ action. Every function returns one of the two codes below, except
 
 ### Persistence Model
 
-**There is no requirement for the HAL to persist any setting.** The caller persists anything related
+**There is no requirement for the HAL to persist any setting:** The caller persists anything related
 to the MTA feature that must survive a restart, including the state set by `mta_hal_DectSetEnable()`,
 `mta_hal_DectSetRegistrationMode()`, `mta_hal_SetDectPIN()`, `mta_hal_SetDSXLogEnable()` and
 `mta_hal_SetCallSignallingLogEnable()`, and re-applies it after re-initialization.
@@ -248,24 +247,15 @@ The MTA HAL component must record all errors and critical informative messages, 
 flow of the system can be followed.
 
 Vendors log into the `mta_vendor_hal.log` file, located in either the `/var/tmp/` or the
-`/rdklogs/logs/` directory. Log entries are categorised by the following levels, in descending order
-of severity:
+`/rdklogs/logs/` directory.
 
-- **FATAL:** critical conditions, typically a crash or a severe failure that requires immediate
-  attention.
-- **ERROR:** non-fatal error conditions that significantly impede normal operation.
-- **WARNING:** potentially harmful situations that do not yet represent errors.
-- **NOTICE:** important events that are not errors.
-- **INFO:** general informational messages that highlight system operations.
-- **DEBUG:** detailed information useful when diagnosing a problem.
-- **TRACE:** fine-grained tracing of the internal flow of the implementation.
+Log levels follow the Linux standard logging system, in descending order of severity: `FATAL`, `ERROR`, `WARNING`, `NOTICE`, `INFO`, `DEBUG` and `TRACE`. Each log entry carries a timestamp, the log level and a message describing the event or condition.
 
-Each log entry carries a timestamp, the log level and a message describing the event or condition.
-Because `RETURN_ERR` carries no cause, an implementation logs enough detail at **ERROR** to identify
+Because `RETURN_ERR` carries no cause, an implementation logs enough detail at `ERROR` to identify
 which operation failed and why.
 
 Implementations must not log credentials, secrets, security-sensitive information, or other sensitive data.
-This applies at every log level, including **DEBUG** and **TRACE**, and to every other diagnostic
+This applies at every log level, including `DEBUG` and `TRACE`, and to every other diagnostic
 output: error messages, traces, crash artefacts, support bundles and telemetry. Where a diagnostic
 must refer to such a value, it names the operation and substitutes a fixed marker such as
 `[REDACTED]`, never a fragment, length or hash of the value. MTA event, `DSX` and call-signalling log
@@ -279,23 +269,13 @@ during normal operation. Memory ownership is described under `Memory Model`.
 
 ### Quality Control
 
-MTA HAL implementations should pass checks using third-party tools such as `Coverity`, `Black Duck`
-and `Valgrind` without any issues, to ensure quality. There should be no memory leaks or corruption
-introduced by the HAL or by the third-party software beneath it.
+An implementation should pass analysis with third-party tools such as `Coverity`, `Black Duck` and `Valgrind` without reported issues. Neither the HAL implementation nor the vendor software beneath it may introduce memory leaks or memory corruption.
 
-**Keeping this document accurate.** Any change to a file listed under `Source References` obliges a
-review of this document. A change to `mta_hal.h` obliges a review of `Data Structures and Defines`,
-`API Surface`, `Sequence Diagram`, `State Diagram` and the runtime topics; a change to `CHANGELOG.md`
-or to the repository's tags obliges a review of `Version History`. The reviewer is the
-`rdkcentral/rdkb-halif-mta` maintainer team, reached as `CONTRIBUTING.md` directs: raise an issue,
-then open a pull request for team review.
+Any change to a file listed under `Source References` obliges a review of this document by the repository maintainers, through the issue and pull-request process `CONTRIBUTING.md` describes.
 
 ### Licensing
 
-MTA HAL implementations are expected to be released under the Apache License 2.0.
-
-The interface definition in this repository is itself licensed under the Apache License 2.0, with
-the full text in `LICENSE` and the attribution notice in `NOTICE`.
+The interface definition is licensed under the Apache License 2.0, with the full text in `LICENSE` and the attribution notice in `NOTICE`. An implementation of this interface is expected to be released under the Apache License 2.0.
 
 ### Build Requirements
 
@@ -308,21 +288,15 @@ suite, not the interface or an implementation of it.
 
 ### Variability Management
 
-Changes to the interface are controlled by versioning. Vendors are expected to implement a fixed
-version of the interface and, based on `SLA` agreements, to move to later versions as demand
-requires.
+Changes to the interface are controlled by versioning. Vendors implement a designated version of the interface and move to later versions as their service agreements require. Each interface version follows [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html), and vendor code complies with a specific version.
 
-Each API interface is versioned using [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html),
-and vendor code complies with a specific version of the interface.
-
-The interface version a vendor implements is the release tag of this repository it was built
-against. `mta_hal.h` publishes no version macro or version query, so a caller cannot test the
-version at compile or run time; a caller that uses a function its implementation's revision lacks
-fails at link time.
+The interface version is identified by the repository's release tag. `mta_hal.h` publishes no
+version macro or version query, so a caller cannot test the version at compile or run time; a
+caller that uses a function its implementation's revision lacks fails at link time.
 
 ### Platform or Product Customization
 
-**This interface defines no product-customization compile flag.** All 49 functions, 12 structures
+**This interface defines no product-customization compile flag:** All 49 functions, 12 structures
 and 3 enumerations are declared on every platform.
 
 The `#ifndef` guards around `ULONG`, `CHAR`, `UCHAR`, `BOOLEAN`, `INT`, `TRUE`, `FALSE`, `ENABLE`,
@@ -351,13 +325,13 @@ Every function is a synchronous getter, setter or command addressed either to th
 to one voice line. Results are written through caller-supplied pointers and status is reported by
 return value.
 
-- **Line addressing.** `mta_hal_LineTableGetEntry()` and `mta_hal_TriggerDiagnostics()` take a
+- **Line addressing:** `mta_hal_LineTableGetEntry()` and `mta_hal_TriggerDiagnostics()` take a
   zero-based index below the count `mta_hal_LineTableGetNumberOfEntries()` reports. The other
   per-line calls take an identifier from the line-table entry: `mta_hal_GetCALLP()` its
   `LineNumber`, and `mta_hal_GetCalls()` and `mta_hal_ClearCalls()` its `InstanceNumber`.
-- **Point-in-time reads.** Reads report current values. Line register status is the only value also
+- **Point-in-time reads:** Reads report current values. Line register status is the only value also
   pushed to the caller; see `Asynchronous Notification Model`.
-- **Commands report acceptance.** `mta_hal_start_provisioning()`, `mta_hal_TriggerDiagnostics()`
+- **Commands report acceptance:** `mta_hal_start_provisioning()`, `mta_hal_TriggerDiagnostics()`
   and `mta_hal_devResetNow()` report acceptance, not completion; see `Blocking calls`.
 
 #### Object Lifecycles
@@ -372,13 +346,13 @@ rules under `Memory Model`.
 The bootup order, the polling of provisioning progress and the timing of callback registration
 follow `Initialization and Startup`. After bootup, these rules order the remaining calls:
 
-- **Status before reads.** Provisioning progress is polled before a caller relies on line, call or
+- **Status before reads:** Provisioning progress is polled before a caller relies on line, call or
   `DHCP` reads.
-- **Count before entry.** A caller reads the count with `mta_hal_LineTableGetNumberOfEntries()`
+- **Count before entry:** A caller reads the count with `mta_hal_LineTableGetNumberOfEntries()`
   before passing a line index, and the entry with `mta_hal_LineTableGetEntry()` before a per-line
   call that takes an identifier from it, as `Line addressing` describes. The count can change, so a
   caller re-reads it before relying on an earlier index.
-- **Read back after write.** Each setter has a matching getter, for example
+- **Read back after write:** Each setter has a matching getter, for example
   `mta_hal_DectSetEnable()` and `mta_hal_DectGetEnable()`; reading the value back confirms that a
   write took effect.
 
@@ -398,7 +372,7 @@ follow `Initialization and Startup`. After bootup, these rules order the remaini
 Every type below is declared in `mta_hal.h` under the `MTA_HAL_TYPES` Doxygen group, and the meaning
 of each field is documented on the field itself.
 
-**Enumerations.**
+**Enumerations:**
 
 | Type | What it represents |
 | --- | --- |
@@ -406,7 +380,7 @@ of each field is documented on the field itself.
 | `MTAMGMT_MTA_PROVISION_STATUS` | `MTA_PROVISIONED` (0) or `MTA_NON_PROVISIONED` (1), reported by `mta_hal_getMtaProvisioningStatus()`. See `State Diagram`. |
 | `MTAMGMT_MTA_PROV_IP_MODE` | `MTA_IPV4` (0), `MTA_IPV6` (1) or `MTA_DUAL_STACK` (2). The caller supplies the ordinal in the `MtaIPMode` member of `MTAMGMT_PROVISIONING_PARAMS`, which is declared `INT`, so the type does not reject other values. |
 
-**Structures.** All twelve are passed by pointer.
+**Structures:** All twelve are passed by pointer.
 
 | Type | What it represents |
 | --- | --- |
@@ -423,17 +397,17 @@ of each field is documented on the field itself.
 | `MTAMGMT_MTA_BATTERY_INFO` | The battery's model, serial and part number and charger firmware revision. Read by `mta_hal_BatteryGetInfo()`. |
 | `MTAMGMT_PROVISIONING_PARAMS` | The input to `mta_hal_start_provisioning()`: the `MtaIPMode` ordinal, the `DHCP` option 122 sub-option values and the option 2171 `CCC` `DSS` identifiers with their lengths. |
 
-**Pointer aliases.** Eleven structures have a pointer alias of the form `PMTAMGMT_<NAME>`, for example
+**Pointer aliases:** Eleven structures have a pointer alias of the form `PMTAMGMT_<NAME>`, for example
 `PMTAMGMT_MTA_DECT`. `MTAMGMT_PROVISIONING_PARAMS` instead has `PMTAMGMT_MTA_PROVISIONING_PARAMS`,
 with an extra `MTA_`, and that is the type `mta_hal_start_provisioning()` takes.
 
-**Callback type.**
+**Callback type:**
 
 | Type | Installed by | What it represents |
 | --- | --- | --- |
 | `mta_hal_getLineRegisterStatus_callback` | `mta_hal_LineRegisterStatus_callback_register` | The line register status callback a caller implements. See `Asynchronous Notification Model`. |
 
-**Constants.**
+**Constants:**
 
 | Macro | Value | What it represents |
 | --- | --- | --- |
@@ -459,7 +433,7 @@ Per-API detail — argument direction, valid ranges, array sizing, buffer owners
 and the full return-value list — is in the Doxygen block on each declaration in `mta_hal.h`, under
 the `MTA_HAL_APIS` group.
 
-**Initialization and provisioning** — 8 functions.
+**Initialization and provisioning:** 8 functions.
 
 | API | Purpose |
 | --- | --- |
@@ -472,7 +446,7 @@ the `MTA_HAL_APIS` group.
 | `mta_hal_GetDHCPInfo` | Reports the MTA's current IPv4 `DHCP` lease, addressing and option values. |
 | `mta_hal_GetDHCPV6Info` | Reports the MTA's current IPv6 `DHCPv6` lease, addressing and option values. |
 
-**Lines, telephone numbers and registration status** — 5 functions.
+**Lines, telephone numbers and registration status:** 5 functions.
 
 | API | Purpose |
 | --- | --- |
@@ -482,7 +456,7 @@ the `MTA_HAL_APIS` group.
 | `mta_hal_LineRegisterStatus_callback_register` | Installs the caller's callback for line register status updates. |
 | `mta_hal_Get_LineResetCount` | Reports how many times the MTA's voice lines have been reset. |
 
-**Cordless `DECT` handsets** — 9 functions.
+**Cordless `DECT` handsets:** 9 functions.
 
 | API | Purpose |
 | --- | --- |
@@ -496,7 +470,7 @@ the `MTA_HAL_APIS` group.
 | `mta_hal_SetDectPIN` | Sets the base station's authentication `PIN`. |
 | `mta_hal_GetHandsets` | Reports the handsets registered against the MTA, as a count and an array. |
 
-**Calls and call processing** — 4 functions.
+**Calls and call processing:** 4 functions.
 
 | API | Purpose |
 | --- | --- |
@@ -505,7 +479,7 @@ the `MTA_HAL_APIS` group.
 | `mta_hal_ClearCalls` | Discards the voice-quality call records held for one line. |
 | `mta_hal_GetServiceFlow` | Reports every `DOCSIS` service flow the MTA is using, with its `QoS` parameters. |
 
-**Call-signalling and `DSX` logs** — 8 functions.
+**Call-signalling and `DSX` logs:** 8 functions.
 
 | API | Purpose |
 | --- | --- |
@@ -518,7 +492,7 @@ the `MTA_HAL_APIS` group.
 | `mta_hal_ClearCallSignallingLog` | Clears the accumulated call-signalling log. |
 | `mta_hal_GetMtaLog` | Reports the MTA event log in full. |
 
-**Battery** — 12 functions.
+**Battery:** 12 functions.
 
 | API | Purpose |
 | --- | --- |
@@ -535,7 +509,7 @@ the `MTA_HAL_APIS` group.
 | `mta_hal_BatteryGetInfo` | Reports the battery's identity: model, serial and part number and charger firmware revision. |
 | `mta_hal_BatteryGetPowerSavingModeStatus` | Reports whether battery power-saving mode is enabled. |
 
-**Diagnostics and device maintenance** — 3 functions.
+**Diagnostics and device maintenance:** 3 functions.
 
 | API | Purpose |
 | --- | --- |

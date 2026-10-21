@@ -59,12 +59,12 @@ The interface covers seven functional areas:
   `DHCP` progress.
 - **Lines, telephone numbers and registration status** — the line table, per-line state and
   loop-test results, per-line registration status by poll or callback, and the line reset count.
-- **`DECT` handsets** — enable the cordless subsystem, control the registration window, deregister
+- **Cordless `DECT` handsets** — enable the cordless subsystem, control the registration window, deregister
   a handset, read the base station's identity, get and set its authentication `PIN`, and list the
   registered handsets.
 - **Calls and call processing** — per-call voice-quality records, call-processing state, and the
   `DOCSIS` service flows in use with their `QoS` parameters.
-- **`DSX` and call-signalling logs** — read, enable, disable and clear the `DSX` and call-signalling
+- **Call-signalling and `DSX` logs** — read, enable, disable and clear the `DSX` and call-signalling
   logs, and read the MTA event log.
 - **Battery** — presence, capacity, charge, run time, power source, condition, identity and
   power-saving mode of the backup battery.
@@ -485,7 +485,7 @@ the `MTA_HAL_APIS` group.
 | `mta_hal_LineRegisterStatus_callback_register` | Installs the caller's callback for line register status updates. |
 | `mta_hal_Get_LineResetCount` | Reports how many times the MTA's voice lines have been reset. |
 
-**`DECT` handsets** — 9 functions.
+**Cordless `DECT` handsets** — 9 functions.
 
 | API | Purpose |
 | --- | --- |
@@ -508,7 +508,7 @@ the `MTA_HAL_APIS` group.
 | `mta_hal_ClearCalls` | Discards the voice-quality call records held for one line. |
 | `mta_hal_GetServiceFlow` | Reports every `DOCSIS` service flow the MTA is using, with its `QoS` parameters. |
 
-**`DSX` and call-signalling logs** — 8 functions.
+**Call-signalling and `DSX` logs** — 8 functions.
 
 | API | Purpose |
 | --- | --- |

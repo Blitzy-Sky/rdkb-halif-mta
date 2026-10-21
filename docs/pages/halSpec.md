@@ -32,11 +32,10 @@
 The diagram below describes the high-level software architecture in which this interface sits.
 
 ```mermaid
-flowchart TD;
-    Caller["RDK-B Middleware"] <-->
-    MTAHAL["MTA HAL — libhal_mta.so"] <-->
-    VendorSoftware["Vendor Software"] <-->
-    Hardware["MTA hardware and voice subsystem"]
+flowchart TD
+    Caller["RDK-B Middleware"] <--> HAL["MTA HAL - mta_hal.h"]
+    HAL <--> Vendor["Vendor Software"]
+    Vendor <--> Hardware["MTA hardware and voice subsystem"]
 ```
 
 The MTA HAL is the abstraction layer through which RDK-B drives a Media Terminal Adapter — the part

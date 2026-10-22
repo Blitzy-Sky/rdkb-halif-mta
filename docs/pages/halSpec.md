@@ -531,54 +531,51 @@ sequenceDiagram
     Note over Caller: Initialize once during bootup. mta_hal_InitDB() is the pre-condition of every other call
     Caller->>HAL: mta_hal_InitDB()
     HAL->>Vendor: make the shared MTA databases reachable
-    Vendor->>HAL: databases available
-    HAL->>Caller: return RETURN_OK
+    Vendor-->>HAL: databases available
+    HAL-->>Caller: return RETURN_OK
 
     Caller->>HAL: mta_hal_start_provisioning()
     HAL->>Vendor: begin provisioning in the requested IP mode
-    Vendor->>HAL: provisioning started
-    HAL->>Caller: return RETURN_OK, provisioning under way
+    Vendor-->>HAL: provisioning started
+    HAL-->>Caller: return RETURN_OK, provisioning under way
 
     Caller->>HAL: mta_hal_LineRegisterStatus_callback_register()
-    HAL->>Caller: return, no status reported
+    HAL-->>Caller: return, no status reported
 
     Caller->>HAL: mta_hal_getMtaProvisioningStatus()
     HAL->>Vendor: read provisioning state
-    Vendor->>HAL: MTA_PROVISIONED
-    HAL->>Caller: return RETURN_OK, status written
+    Vendor-->>HAL: MTA_PROVISIONED
+    HAL-->>Caller: return RETURN_OK, status written
 
     Caller->>HAL: mta_hal_LineTableGetNumberOfEntries()
     HAL->>Vendor: count line table entries
-    Vendor->>HAL: entry count
-    HAL->>Caller: return the count itself, not a status
+    Vendor-->>HAL: entry count
+    HAL-->>Caller: return the count itself, not a status
 
     Caller->>HAL: mta_hal_LineTableGetEntry()
     HAL->>Vendor: read one line by index
-    Vendor->>HAL: line state, loop test results, call summary
-    HAL->>Caller: return RETURN_OK, entry written
+    Vendor-->>HAL: line state, loop test results, call summary
+    HAL-->>Caller: return RETURN_OK, entry written
 
     Caller->>HAL: mta_hal_SetDSXLogEnable()
     HAL->>Vendor: apply the logging setting
-    Vendor->>HAL: applied, not persisted
-    HAL->>Caller: return RETURN_OK
+    Vendor-->>HAL: applied, not persisted
+    HAL-->>Caller: return RETURN_OK
 
     Caller->>HAL: mta_hal_GetDSXLogEnable()
     HAL->>Vendor: read the logging setting back
-    Vendor->>HAL: current setting
-    HAL->>Caller: return RETURN_OK, setting written
+    Vendor-->>HAL: current setting
+    HAL-->>Caller: return RETURN_OK, setting written
 
     Note over Vendor: line registration status changes
     Vendor->>HAL: line register status update
     HAL->>Caller: registered callback, status array and size
-    Caller->>HAL: callback returns RETURN_OK
+    Caller-->>HAL: callback returns RETURN_OK
 ```
-
-Mermaid diagrams render on GitHub; the `HTML` the documentation generator produces shows them as
-source text.
 
 ### State Diagram
 
-The interface exposes status values but defines no transitions between them, so no state machine is
+The interface exposes status values but defines no transitions between them, so no state diagram is
 drawn. A caller reads the current value and polls again rather than predicting the next one.
 
 `MTAMGMT_MTA_STATUS` has five values:
